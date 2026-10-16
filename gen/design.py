@@ -159,7 +159,7 @@ def sheet_mcu():
              12: "OSC_IN", 13: "OSC_OUT", 14: "NRST", 94: "BOOT0", 37: "BOOT1",
              51: "ETH_CS", 52: "ETH_SCK", 53: "ETH_MISO", 54: "ETH_MOSI", 55: "ETH_RST", 56: "ETH_INT",
              68: "UART1_TX", 69: "UART1_RX", 72: "SWDIO", 76: "SWCLK", 89: "SWO",
-             47: "RS485_TX", 48: "RS485_RX", 46: "RS485_DE", 59: "LED_RUN", 60: "LED_ERR"}
+             59: "LED_RUN", 60: "LED_ERR"}
     for i, p in enumerate(DO_PINS):
         conns[p] = f"DO{i + 1}"
     for i, p in enumerate(AI_PINS):
@@ -170,58 +170,58 @@ def sheet_mcu():
             conns[p] = "NC"
     sh.place("MCU_ST_STM32F4:STM32F407VETx", "U200", "STM32F407VET6", X, Y, 0, conns, stub=5.08)
 
-    # HSE crystal 8 MHz
-    sh.text(30, 30, "HSE 8MHz", 1.8)
-    sh.place("Device:Crystal_GND24", ref("Y", 200), "8MHz 20pF", 50, 45, 0,
+    # HSE 8 MHz: sat chan PH0/PH1 (canh trai MCU)
+    sh.text(120, 92, "HSE 8MHz", 1.5)
+    sh.place("Device:Crystal_GND24", ref("Y", 200), "8MHz 20pF", 152.4, 104.14, 90,
              {1: "OSC_IN", 3: "OSC_OUT", 2: "GND"}, footprint=fp_ok("Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm"))
-    C(sh, 200, "20pF", 35, 60, "OSC_IN", "GND")
-    C(sh, 200, "20pF", 65, 60, "OSC_OUT", "GND")
+    C(sh, 200, "20pF", 137.16, 99.06, "OSC_IN", "GND")
+    C(sh, 200, "20pF", 137.16, 114.3, "OSC_OUT", "GND")
 
-    # decoupling
-    sh.text(30, 85, "Tu loc nguon: 1 tu 100nF sat moi chan VDD", 1.8)
-    decap_row(sh, 200, 35, 100, "+3V3", ["100nF"] * 6 + ["4.7uF"])
-    sh.text(30, 120, "VDDA / VCAP", 1.8)
-    decap_row(sh, 200, 35, 135, "+3.3VA", ["1uF", "100nF"])
-    C(sh, 200, "2.2uF", 60, 135, "VCAP1", "GND", fp=C0805)
-    C(sh, 200, "2.2uF", 70, 135, "VCAP2", "GND", fp=C0805)
+    # tu loc nguon (chi noi power symbol) - goc duoi trai
+    sh.text(25, 232, "Tu loc nguon: 1 tu 100nF sat moi chan VDD; 1uF+100nF cho VDDA", 1.5)
+    decap_row(sh, 200, 30, 248, "+3V3", ["100nF"] * 6 + ["4.7uF"])
+    decap_row(sh, 200, 110, 248, "+3.3VA", ["1uF", "100nF"])
+    # VCAP sat chan VCAP_1/VCAP_2
+    C(sh, 200, "2.2uF", 160.02, 205.74, "VCAP1", "GND", fp=C0805)
+    C(sh, 200, "2.2uF", 149.86, 205.74, "VCAP2", "GND", fp=C0805)
 
-    # VREF 3.0V
-    sh.text(30, 160, "Dien ap chuan ADC 3.000V (VREF+)", 1.8)
-    sh.place("Reference_Voltage:REF3030", ref("U", 200), "REF3030", 50, 180, 0,
+    # VREF 3.0V sat chan VREF+
+    sh.text(100, 62, "VREF+ = 3.000V", 1.5)
+    sh.place("Reference_Voltage:REF3030", ref("U", 200), "REF3030", 119.38, 78.74, 0,
              {1: "+3.3VA", 2: "VREF_3V0", 3: "GND"})
-    C(sh, 200, "1uF", 75, 182, "VREF_3V0", "GND")
-    C(sh, 200, "100nF", 85, 182, "VREF_3V0", "GND")
+    C(sh, 200, "1uF", 139.7, 83.82, "VREF_3V0", "GND")
+    C(sh, 200, "100nF", 149.86, 83.82, "VREF_3V0", "GND")
 
-    # reset / boot
-    sh.text(30, 205, "RESET / BOOT", 1.8)
-    C(sh, 200, "100nF", 35, 222, "NRST", "GND")
-    sh.place("Switch:SW_Push", ref("SW", 200), "RESET", 55, 220, 0, {1: "NRST", 2: "GND"}, footprint=fp_ok(BTN))
-    R(sh, 200, "10k", 80, 222, "BOOT0", "GND")
-    sh.place("Switch:SW_Push", ref("SW", 200), "BOOT", 100, 220, 0, {1: "+3V3", 2: "BOOT0"}, footprint=fp_ok(BTN))
-    R(sh, 200, "10k", 120, 222, "BOOT1", "GND")
+    # reset / boot (NRST, BOOT0 la net global -> nhan)
+    sh.text(30, 30, "RESET / BOOT", 1.5)
+    C(sh, 200, "100nF", 35.56, 50.8, "NRST", "GND")
+    sh.place("Switch:SW_Push", ref("SW", 200), "RESET", 55.88, 48.26, 0, {1: "NRST", 2: "GND"}, footprint=fp_ok(BTN))
+    R(sh, 200, "10k", 81.28, 50.8, "BOOT0", "GND")
+    sh.place("Switch:SW_Push", ref("SW", 200), "BOOT", 101.6, 48.26, 0, {1: "+3V3", 2: "BOOT0"}, footprint=fp_ok(BTN))
+    # BOOT1 (PB2, canh phai)
+    R(sh, 200, "10k", 243.84, 142.24, "BOOT1", "GND")
 
-    # SWD
-    sh.text(290, 30, "SWD debug (ST-Link)", 1.8)
-    sh.place("Connector:Conn_ARM_JTAG_SWD_10", ref("J", 200), "SWD", 310, 55, 0,
+    # SWD (canh phai, quay ve phia MCU)
+    sh.text(250, 100, "SWD debug (ST-Link)", 1.5)
+    sh.place("Connector:Conn_ARM_JTAG_SWD_10", ref("J", 200), "SWD", 264.16, 124.46, 0,
              {1: "+3V3", 2: "SWDIO", 3: "GND", 4: "SWCLK", 6: "SWO", 7: "NC", 8: "NC", 9: "GND", 10: "NRST"},
-             footprint=fp_ok("Connector_PinHeader_1.27mm:PinHeader_2x05_P1.27mm_Vertical_SMD"))
+             footprint=fp_ok("Connector_PinHeader_1.27mm:PinHeader_2x05_P1.27mm_Vertical_SMD"), mirror="y")
 
-    # status LEDs
-    sh.text(290, 95, "LED trang thai", 1.8)
-    R(sh, 200, "1k", 300, 112, "LED_RUN", "RUN_A")
-    LED(sh, 200, "RUN (green)", 300, 126, "RUN_A", "GND", rot=90)
-    R(sh, 200, "1k", 320, 112, "LED_ERR", "ERR_A")
-    LED(sh, 200, "ERR (red)", 320, 126, "ERR_A", "GND", rot=90)
+    # LED trang thai (PD12/PD13, canh trai)
+    sh.text(120, 172, "LED trang thai", 1.5)
+    R(sh, 200, "1k", 160.02, 182.88, "LED_RUN", "RUN_A", rot=270)
+    LED(sh, 200, "RUN (green)", 147.32, 182.88, "RUN_A", "GND", rot=0)
+    R(sh, 200, "1k", 160.02, 190.5, "LED_ERR", "ERR_A", rot=270)
+    LED(sh, 200, "ERR (red)", 147.32, 190.5, "ERR_A", "GND", rot=0)
 
-    sh.text(270, 160, "GAN CHAN:", 1.8)
+    sh.text(290, 160, "GAN CHAN:", 1.8)
     notes = ["DO1..DO16 -> PE1,PE0,PB9,PB8,PB7,PB6,PB5,PB4,PD7..PD0",
              "PA0-PA3, PC0-PC5 -> AI1..AI10 (ADC1 12-bit)",
              "SPI2 PB12(CS) PB13 PB14 PB15 -> W5500, PD8 RST, PD9 INT",
              "USART1 PA9/PA10 -> CH340C (bootloader UART)",
-             "USART3 PB10/PB11 + PE15 DE -> RS485",
              "PA13/PA14/PB3 -> SWD, PD12/PD13 -> LED"]
     for i, n in enumerate(notes):
-        sh.text(270, 167 + i * 6, n, 1.5)
+        sh.text(290, 167 + i * 6, n, 1.5)
     return sh
 
 
@@ -270,7 +270,7 @@ def sheet_usb():
 
 # =================================================================== COMM
 def sheet_comm():
-    sh = Sheet("Ethernet + RS485", "comm.kicad_sch", "W5500 Ethernet (Modbus TCP) + RS485 (Modbus RTU)")
+    sh = Sheet("Ethernet", "comm.kicad_sch", "W5500 Ethernet - Modbus TCP")
     X, Y = 140, 130
     c = {28: "+3V3", 4: "+3V3", 8: "+3V3", 11: "+3V3", 15: "+3V3", 17: "+3V3", 21: "+3V3",
          3: "GND", 9: "GND", 14: "GND", 16: "GND", 19: "GND", 48: "GND", 29: "GND", 23: "GND",
@@ -282,63 +282,48 @@ def sheet_comm():
          1: "ETH_TXN", 2: "ETH_TXP", 5: "ETH_RXN", 6: "ETH_RXP"}
     sh.place("Interface_Ethernet:W5500", "U400", "W5500", X, Y, 0, c, stub=5.08)
     # support parts
-    R(sh, 400, "12.4k 1%", 60, 60, "ETH_EXRES", "GND")
-    C(sh, 400, "4.7uF", 70, 60, "ETH_TOCAP", "GND", fp=C0805)
-    C(sh, 400, "10nF", 80, 60, "ETH_1V2", "GND")
-    sh.place("Device:Crystal", ref("Y", 400), "25MHz 18pF", 70, 210, 0, {1: "ETH_XI", 2: "ETH_XO"},
+    R(sh, 400, "12.4k 1%", 170.18, 157.48, "ETH_EXRES", "GND")
+    C(sh, 400, "4.7uF", 180.34, 162.56, "ETH_TOCAP", "GND", fp=C0805)
+    C(sh, 400, "10nF", 190.5, 167.64, "ETH_1V2", "GND")
+    sh.place("Device:Crystal", ref("Y", 400), "25MHz 18pF", 109.22, 133.35, 90, {1: "ETH_XI", 2: "ETH_XO"},
              footprint=fp_ok("Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm"))
-    C(sh, 400, "18pF", 60, 225, "ETH_XI", "GND")
-    C(sh, 400, "18pF", 80, 225, "ETH_XO", "GND")
-    R(sh, 400, "10k", 95, 225, "+3V3", "ETH_INT")
-    R(sh, 400, "10k", 105, 225, "+3V3", "ETH_RST")
+    C(sh, 400, "18pF", 99.06, 144.78, "ETH_XI", "GND")
+    C(sh, 400, "18pF", 88.9, 144.78, "ETH_XO", "GND")
+    R(sh, 400, "10k", 95.25, 104.14, "+3V3", "ETH_INT")
+    R(sh, 400, "10k", 102.87, 104.14, "+3V3", "ETH_RST")
     sh.text(40, 245, "Tu loc W5500 (dat sat chan AVDD/VDD)", 1.5)
     decap_row(sh, 400, 40, 260, "+3V3", ["100nF"] * 5 + ["10uF"])
 
     # magnetics termination
-    sh.text(210, 40, "Phoi hop tro khang PHY (theo WIZnet ref. schematic - kiem tra lai)", 1.5)
-    R(sh, 400, "49.9 1%", 215, 60, "+3V3", "ETH_TXP")
-    R(sh, 400, "49.9 1%", 225, 60, "+3V3", "ETH_TXN")
-    R(sh, 400, "49.9 1%", 240, 60, "ETH_RXP", "ETH_RXMID")
-    R(sh, 400, "49.9 1%", 250, 60, "ETH_RXN", "ETH_RXMID")
-    C(sh, 400, "6.8nF", 265, 60, "ETH_RXMID", "GND")
-    C(sh, 400, "10nF", 275, 60, "+3V3", "GND")
-    sh.place("Connector:RJ45_Hanrun_HR911105A_Horizontal", ref("J", 400), "HR911105A", 250, 120, 0,
+    sh.text(170, 78, "Phoi hop tro khang PHY (theo WIZnet ref. schematic - kiem tra lai)", 1.3)
+    R(sh, 400, "49.9 1%", 177.8, 92.71, "+3V3", "ETH_TXP")
+    R(sh, 400, "49.9 1%", 185.42, 92.71, "+3V3", "ETH_TXN")
+    R(sh, 400, "49.9 1%", 193.04, 128.27, "ETH_RXP", "ETH_RXMID")
+    R(sh, 400, "49.9 1%", 200.66, 128.27, "ETH_RXN", "ETH_RXMID")
+    C(sh, 400, "6.8nF", 208.28, 138.43, "ETH_RXMID", "GND")
+    C(sh, 400, "10nF", 195.58, 90.17, "+3V3", "GND")
+    sh.place("Connector:RJ45_Hanrun_HR911105A_Horizontal", ref("J", 400), "HR911105A", 248.92, 111.76, 0,
              {1: "ETH_TXP", 2: "ETH_TXN", 3: "ETH_RXP", 6: "ETH_RXN", 4: "+3V3", 5: "ETH_RCT", 7: "NC",
               8: "GND", "SH": "GND", 9: "ETH_LEDG_A", 10: "ETH_LINK_LED", 12: "ETH_LEDY_A", 11: "ETH_ACT_LED"})
-    C(sh, 400, "10nF", 215, 150, "ETH_RCT", "GND")
-    C(sh, 400, "100nF", 225, 150, "+3V3", "GND")
-    R(sh, 400, "330", 295, 100, "+3V3", "ETH_LEDG_A")
-    R(sh, 400, "330", 305, 100, "+3V3", "ETH_LEDY_A")
+    C(sh, 400, "10nF", 218.44, 135.89, "ETH_RCT", "GND")
+    C(sh, 400, "100nF", 210.82, 90.17, "+3V3", "GND")
+    R(sh, 400, "330", 284.48, 120.65, "+3V3", "ETH_LEDG_A")
+    R(sh, 400, "330", 292.1, 102.87, "+3V3", "ETH_LEDY_A")
 
-    # RS485
-    sh.text(210, 190, "RS485 (Modbus RTU) - USART3", 1.8)
-    sh.place("Interface_UART:SP3485EN", ref("U", 400), "SP3485EN", 250, 230, 0,
-             {8: "+3V3", 5: "GND", 1: "RS485_RX", 2: "RS485_DE", 3: "RS485_DE", 4: "RS485_TX",
-              6: "RS485_A", 7: "RS485_B"}, footprint=fp_ok("Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"))
-    C(sh, 400, "100nF", 225, 205, "+3V3", "GND")
-    R(sh, 400, "10k", 215, 250, "RS485_DE", "GND")
-    R(sh, 400, "680", 290, 210, "+3V3", "RS485_A")
-    R(sh, 400, "680", 300, 250, "RS485_B", "GND")
-    sh.place("Jumper:Jumper_2_Open", ref("JP", 400), "TERM 120R", 320, 215, 0, {1: "RS485_A", 2: "RS485_T"},
-             footprint=fp_ok(JMP2))
-    R(sh, 400, "120", 340, 225, "RS485_T", "RS485_B", fp=R1206)
-    sh.place("Device:D_TVS", ref("D", 400), "SMF12CA", 315, 245, 90, {2: "RS485_A", 1: "GND"}, footprint=fp_ok(SOD123F))
-    sh.place("Device:D_TVS", ref("D", 400), "SMF12CA", 325, 255, 90, {2: "RS485_B", 1: "GND"}, footprint=fp_ok(SOD123F))
-    sh.place("Connector:Screw_Terminal_01x03", ref("J", 400), "RS485", 370, 245, 0,
-             {1: "RS485_A", 2: "RS485_B", 3: "GND"}, footprint=fp_ok(tb(3)))
+    # them 1 tu 100nF cho chan VDD (pin 28) cua W5500 (giu ref C415 nhu tren PCB)
+    C(sh, 400, "100nF", 160.02, 182.88, "+3V3", "GND")
     return sh
 
 
 # =================================================================== OUTPUTS
-def out_channel(sh, n, X, Y, opto_ref, unit):
-    """1 kenh ngo ra: opto TLP291 -> N-MOSFET 60V, sink (NPN-type), diode dap, LED bao."""
+def out_channel(sh, n, X, Y):
+    """1 kenh ngo ra: opto PC817 -> N-MOSFET 60V, sink (NPN-type), diode dap, LED bao."""
     X, Y = kisch.snap(X), kisch.snap(Y)
     yn, vo, com = f"Y{n}", "V24_OUT", "COM_OUT"
     rin = R(sh, 500, "470", X + 7.62, Y, f"DO{n}", None, rot=90)
-    a_pin, k_pin, c_pin, e_pin = [(1, 2, 16, 15), (3, 4, 14, 13), (5, 6, 12, 11), (7, 8, 10, 9)][unit - 1]
-    op = sh.place("Isolator:TLP291-4", opto_ref, "TLP291-4", X + 22.86, Y + 2.54, 0,
-                  {k_pin: "GND"}, unit=unit, footprint=fp_ok("Package_SO:SOIC-16_4.55x10.3mm_P1.27mm"),
-                  hide_value=True)
+    a_pin, k_pin, c_pin, e_pin = 1, 2, 4, 3          # PC817: 1=A 2=K 3=E 4=C
+    op = sh.place("Isolator:PC817", ref("U", 500), "PC817 (SMD)", X + 22.86, Y + 2.54, 0,
+                  {k_pin: "GND"}, footprint=fp_ok("Package_DIP:SMDIP-4_W9.53mm"))
     sh.path(rin.p(2), op.p(a_pin))
     rc = R(sh, 500, "10k", X + 30.48, Y - 7.62, vo, None)
     sh.path(op.p(c_pin), rc.p(2))
@@ -359,12 +344,12 @@ def out_channel(sh, n, X, Y, opto_ref, unit):
 
 def sheet_outputs():
     sh = Sheet("16 ngo ra transistor", "outputs.kicad_sch", "16 ngo ra transistor (sink), cach ly quang", paper="A2")
-    sh.text(20, 20, "16 NGO RA TRANSISTOR SINK (NPN-type): MCU -> TLP291 -> MOSFET 60V/2.5A. "
+    sh.text(20, 20, "16 NGO RA TRANSISTOR SINK (NPN-type): MCU -> PC817 -> MOSFET 60V/2.5A. "
                     "Tai noi giua V+ (24V) va Yn. Cap nguon ngoai vao V+/COM (cach ly voi mach logic).", 2.0)
     for ch in range(16):
         col, row = ch % 4, ch // 4
         X, Y = 30 + col * 95, 55 + row * 55
-        out_channel(sh, ch + 1, X, Y, f"U{500 + ch // 4 + 1}", ch % 4 + 1)
+        out_channel(sh, ch + 1, X, Y)
     # field supply / terminals
     bx, by = 440, 60
     sh.text(bx - 10, by - 15, "CAU DAU NGO RA", 2.0)
@@ -385,47 +370,40 @@ def sheet_outputs():
 
 # =================================================================== ANALOG
 def ai_channel(sh, n, X, Y):
-    """0-10V: chia ap 47k/18k -> 2.77V @10V. 4-20mA: dong JP, shunt 499R -> 9.9V @20mA."""
+    """Chi 4-20mA: PTC -> TVS 5V -> shunt 120R 0.1% (20mA -> 2.40V) -> loc 4.7k/100nF -> ADC."""
     X, Y = kisch.snap(X), kisch.snap(Y)
+    k = n - 1
     t = f"AI{n}_T"
-    ptc = sh.place("Device:Polyfuse", ref("F", 700), "50mA", X + 7.62, Y, 90, {1: t}, footprint=fp_ok(PTC0805))
-    tvs = sh.place("Device:D_TVS", ref("D", 700), "SMF12CA", X + 15.24, Y + 3.81, 90, {1: "GND"}, footprint=fp_ok(SOD123F))
-    rsh = R(sh, 700, "499 0.1% 0.25W", X + 22.86, Y + 13.97, f"AI{n}_SH", "GND", fp=R1206)
-    ra = R(sh, 700, "47k 0.1%", X + 30.48, Y, None, None, rot=90)
-    rb = R(sh, 700, "18k 0.1%", X + 38.1, Y + 3.81, None, "GND")
-    rf = R(sh, 700, "1k", X + 45.72, Y, None, None, rot=90)
-    cf = C(sh, 700, "100nF", X + 53.34, Y + 3.81, None, "GND")
+    ptc = sh.place("Device:Polyfuse", f"F{701 + k}", "50mA", X + 7.62, Y, 90, {1: t}, footprint=fp_ok(PTC0805))
+    tvs = sh.place("Device:D_TVS", f"D{701 + k}", "SMF5.0CA", X + 15.24, Y + 3.81, 90, {1: "GND"},
+                   footprint=fp_ok(SOD123F))
+    rsh = sh.place("Device:R", f"R{701 + 4 * k}", "120 0.1% 25ppm", X + 22.86, Y + 3.81, 0, {2: "GND"},
+                   footprint=fp_ok(R1206))
+    rf = sh.place("Device:R", f"R{704 + 4 * k}", "4.7k", X + 30.48, Y, 90, {}, footprint=fp_ok(R0603))
+    cf = sh.place("Device:C", f"C{701 + k}", "100nF", X + 38.1, Y + 3.81, 0, {2: "GND"}, footprint=fp_ok(C0603))
     sh.path(ptc.p(2), tvs.p(2))
-    node = (X + 22.86, Y)
-    sh.path(tvs.p(2), node)
-    sh.path(node, ra.p(1))
-    sh.path(node, (X + 22.86, Y + 5.08))
-    sh.label_at(f"AI{n}_IN", X + 22.86, Y + 5.08, (0, 1))
-    sh.path(ra.p(2), rb.p(1))
-    sh.path(rb.p(1), rf.p(1))
+    sh.path(tvs.p(2), rsh.p(1))
+    sh.path(rsh.p(1), rf.p(1))
+    sh.label_at(f"AI{n}_IN", *rsh.p(1), (0, -1))
     sh.path(rf.p(2), cf.p(1))
-    end = sh.path(cf.p(1), (X + 60.96, Y))
+    end = sh.path(cf.p(1), (X + 45.72, Y))
     sh.label_at(f"AI{n}_ADC", *end, (1, 0))
-    sh.text(X, Y - 8, f"AI{n}: 0-10V / 4-20mA (cam jumper {n} tren J703)", 1.5)
+    sh.text(X, Y - 8, f"AI{n}: 4-20mA", 1.5)
 
 
 def sheet_analog():
-    sh = Sheet("10 ngo vao analog", "analog.kicad_sch", "10 ngo vao analog 0-10V / 4-20mA")
-    sh.text(20, 20, "10 NGO VAO ANALOG: 0-10V (ho JP) hoac 4-20mA (dong JP, shunt 499R). "
-                    "Vadc = Vin x 18/65 ; 10V -> 2.77V ; 20mA -> 2.74V (VREF = 3.000V)", 1.8)
+    sh = Sheet("10 ngo vao analog", "analog.kicad_sch", "10 ngo vao analog 4-20mA")
+    sh.text(20, 20, "10 NGO VAO 4-20mA: shunt 120R 0.1% -> Vadc = I x 120R ; 4mA -> 0.48V ; 20mA -> 2.40V ; "
+                    "24mA -> 2.88V (VREF = 3.000V)", 1.8)
     for ch in range(10):
         col, row = ch % 2, ch // 2
         ai_channel(sh, ch + 1, 30 + col * 95, 45 + row * 42)
-    sh.place("Connector:Screw_Terminal_01x10", ref("J", 700), "AI 1-10", 250, 60, 0,
+    sh.place("Connector:Screw_Terminal_01x10", "J701", "AI 1-10 (4-20mA)", 250, 60, 0,
              {i + 1: f"AI{i + 1}_T" for i in range(10)}, footprint=fp_ok(tb(10)), mirror="y")
     sh.text(225, 105, "Nguon cap cho cam bien 2 day (24V loop) + chan chung GND", 1.5)
-    sh.text(225, 185, "J703: cam jumper cap chan (2n-1,2n) -> kenh n do 4-20mA", 1.5)
-    sh.place("Connector_Generic:Conn_02x10_Odd_Even", ref("J", 700), "mA SELECT", 250, 210, 0,
-             {**{2 * i + 1: f"AI{i + 1}_IN" for i in range(10)}, **{2 * i + 2: f"AI{i + 1}_SH" for i in range(10)}},
-             footprint=fp_ok("Connector_PinHeader_2.54mm:PinHeader_2x10_P2.54mm_Vertical"))
-    sh.place("Device:Polyfuse", ref("F", 700), "200mA", 250, 125, 90, {1: "+24V", 2: "V24_LOOP"},
+    sh.place("Device:Polyfuse", "F711", "200mA", 250, 125, 90, {1: "+24V", 2: "V24_LOOP"},
              footprint=fp_ok(PTC1206))
-    sh.place("Connector:Screw_Terminal_01x06", ref("J", 700), "AI PWR/COM", 250, 150, 0,
+    sh.place("Connector:Screw_Terminal_01x06", "J703", "AI PWR/COM", 250, 150, 0,
              {1: "V24_LOOP", 2: "V24_LOOP", 3: "V24_LOOP", 4: "GND", 5: "GND", 6: "GND"},
              footprint=fp_ok(tb(6)), mirror="y")
     return sh
@@ -434,7 +412,7 @@ def sheet_analog():
 def main():
     os.makedirs(OUT, exist_ok=True)
     root = Sheet("Root", "PLC_STM32_Modbus.kicad_sch", "PLC STM32F407 Modbus TCP - 16DO / 10AI")
-    root.text(30, 25, "PLC STM32F407VET6 + W5500 : Modbus TCP (LAN) + Modbus RTU (RS485), nap code qua USB-C (CH340C)", 2.5)
+    root.text(30, 25, "PLC STM32F407VET6 + W5500 : Modbus TCP (LAN), nap code qua USB-C (CH340C)", 2.5)
     sheets = [sheet_power(), sheet_mcu(), sheet_usb(), sheet_comm(), sheet_outputs(), sheet_analog()]
     gl, singles = kisch.write_project(OUT, root, sheets)
     pro = os.path.join(OUT, "PLC_STM32_Modbus.kicad_pro")

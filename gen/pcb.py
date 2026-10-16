@@ -18,7 +18,9 @@ NETFILE = os.path.join(HERE, "plc.net")
 FPDIR = r"C:\Program Files\KiCad\10.0\share\kicad\footprints"
 
 OX, OY = 50.0, 50.0          # vi tri goc board tren trang
-W, H = 100.0, 80.0
+W, H = 120.0, 90.0
+ISO_Y = 29.0                 # duong tam ranh cach ly (duoi than opto)
+ISO_W = 2.4
 MM = pcbnew.FromMM
 
 
@@ -376,6 +378,25 @@ def fanout(B, ref, depth, via_d=0.6, drill=0.3, clr=0.199):
     return made
 
 
+def iso_barrier(B):
+    """Ranh cach ly giua phia tai va phia logic: cam day, via, do dong tren ca 2 lop."""
+    z = pcbnew.ZONE(B.b)
+    z.SetIsRuleArea(True)
+    z.SetDoNotAllowTracks(True)
+    z.SetDoNotAllowVias(True)
+    z.SetDoNotAllowZoneFills(True)
+    z.SetDoNotAllowPads(False)
+    z.SetDoNotAllowFootprints(False)
+    z.SetLayerSet(pcbnew.LSET.AllCuMask(2))
+    z.SetZoneName("ISOLATION")
+    ol = z.Outline()
+    ol.NewOutline()
+    y0, y1 = ISO_Y - ISO_W / 2, ISO_Y + ISO_W / 2
+    for x, y in [(0, y0), (W, y0), (W, y1), (0, y1)]:
+        ol.Append(MM(OX + x), MM(OY + y))
+    B.b.Add(z)
+
+
 def edge_keepout(B, w=0.45):
     for (x0, y0, x1, y1) in [(0, 0, W, w), (0, H - w, W, H), (0, 0, w, H), (W - w, 0, W, H)]:
         z = pcbnew.ZONE(B.b)
@@ -409,113 +430,97 @@ def layout(B, comps):
         return lst
 
     # mounting holes
-    for i, (x, y) in enumerate([(3.5, 3.5), (96.5, 3.5), (3.5, 76.5), (96.5, 76.5)]):
+    for i, (x, y) in enumerate([(3.5, 3.5), (W - 3.5, 3.5), (3.5, H - 3.5), (W - 3.5, H - 3.5)]):
         B.add_hole(f"H{i + 1}", x, y)
+    done(["H1", "H2", "H3", "H4"])
 
-    # ---- terminal blocks (wire entry = +y cua footprint)
-    B.put("J501", 45.5, 4.2, 180)
-    B.put("J502", 86.5, 4.2, 180)
-    B.put("J701", 9.5, 80 - 4.2, 0)
-    B.put("J703", 49.5, 80 - 4.2, 0)
-    B.put("J402", 73.5, 80 - 4.2, 0)
-    B.put("J101", 86.2, 80 - 4.2, 0)
-    done(["J501", "J502", "J701", "J703", "J402", "J101"])
+    # ---- cau dau (loi day = +y cua footprint)
+    B.put("J501", 50.7, 4.2, 180)
+    B.put("J502", 103.5, 4.2, 180)
+    B.put("J701", 10.0, H - 4.2, 0)
+    B.put("J703", 50.0, H - 4.2, 0)
+    B.put("J101", 104.0, H - 4.2, 0)
+    done(["J501", "J502", "J701", "J703", "J101"])
 
-    # ---- 16 output channels
+    # ---- 16 kenh ngo ra (PHIA TAI: y < ISO_Y0)
+    PITCH = 6.6
     for n in range(1, 17):
-        cx = 10.5 + 5.25 * (n - 1)
+        cx = 10.5 + PITCH * (n - 1)
         k = n - 1
-        B.put(f"D{502 + 2 * k}", cx - 0.9, 10.6, 90)            # LED
-        B.put(f"R{504 + 4 * k}", cx + 0.9, 10.6, 90)            # R_led
-        B.put(f"D{501 + 2 * k}", cx - 1.0, 15.1, 90)            # flyback
-        B.put(f"R{502 + 4 * k}", cx + 1.5, 15.1, 90)            # R_c
-        B.put(f"Q{500 + n}", cx - 0.85, 20.0, 90)                # MOSFET
-        B.put(f"R{503 + 4 * k}", cx + 1.85, 20.0, 90)           # R_g
+        B.put(f"D{502 + 2 * k}", cx - 1.0, 10.9, 90)            # LED
+        B.put(f"R{504 + 4 * k}", cx + 1.0, 10.9, 90)            # R_led
+        B.put(f"D{501 + 2 * k}", cx - 1.2, 15.5, 90)            # flyback
+        B.put(f"R{502 + 4 * k}", cx + 1.8, 15.5, 90)            # R_c
+        B.put(f"Q{500 + n}", cx - 1.0, 20.6, 90)                # MOSFET
+        B.put(f"R{503 + 4 * k}", cx + 2.0, 20.6, 90)            # R_g
+        B.put(f"R{501 + 4 * k}", cx, 36.6, 0)                   # R_in (phia logic)
+        B.put(f"U{500 + n}", cx, ISO_Y, 90)                     # PC817 vat qua ranh cach ly
         done([f"D{502 + 2 * k}", f"R{504 + 4 * k}", f"D{501 + 2 * k}", f"R{502 + 4 * k}", f"Q{500 + n}",
-              f"R{503 + 4 * k}"])
-    opto_x = [10.5 + 5.25 * (4 * g + 1.5) for g in range(4)]
-    for g in range(4):
-        B.put(f"U{501 + g}", opto_x[g], 27.6, 90)
-    done([f"U{501 + g}" for g in range(4)])
-    gaps = [(7.2, 12.8), (23.9, 33.8), (44.9, 54.8), (65.9, 75.8), (86.9, 92.9)]
-    B.put_bbox("D533", 90, left=gaps[0][0], top=23.3)
-    done(["D533"])
-    for g in range(4):
-        x0, x1 = gaps[g + 1]
-        rin = [f"R{501 + 4 * (4 * g + i)}" for i in range(4)]
-        extra = ["C501"] if g == 0 else ["C502"] if g == 1 else []
-        f = B.pack(rin + extra, x0, 23.3, x1, 32.2, prefer_narrow=True)
-        assert not f, f
-        done(rin + extra)
+              f"R{503 + 4 * k}", f"R{501 + 4 * k}", f"U{500 + n}"])
+    # loc nguon relay (V+/COM) giua 2 cau dau
+    fails = B.pack(["D533", "C501", "C502"], B.bbox("J501")[2] + 0.4, 0.6, B.bbox("J502")[0] - 0.4, 8.6)
+    done(["D533", "C501", "C502"])
 
-    # ---- edge connectors
-    B.put_bbox("J401", 90, right=100.6, top=33.0)               # RJ45 mo ra phai
-    B.put_bbox("J301", 270, left=-0.6, top=34.0)                # USB-C mo ra trai
+    # ---- dau noi mep board
+    B.put_bbox("J401", 90, right=W + 0.6, top=39.0)             # RJ45 mo ra phai
+    B.put_bbox("J301", 270, left=-0.6, top=41.0)                # USB-C mo ra trai
     done(["J401", "J301"])
 
     # ---- MCU & W5500
-    B.put("U200", 35.0, 43.6, 0)
-    B.put("U400", 61.0, 43.0, 180)          # phia PHY huong ve RJ45
+    B.put("U200", 44.0, 53.0, 0)
+    B.put("U400", 80.0, 50.0, 180)          # phia PHY huong ve RJ45
     done(["U200", "U400"])
-    done(["H1", "H2", "H3", "H4"])
-    B.put_bbox("J702", 90, right=47.0, top=53.2)
-    done(["J702"])
 
-    fails = []
     # thach anh MCU sat chan PH0/PH1 (canh trai)
-    B.put_bbox("Y201", 90, right=B.bbox("U200")[0] - 0.3, top=40.0)
+    B.put_bbox("Y201", 90, right=B.bbox("U200")[0] - 0.3, top=49.0)
     done(["Y201"])
     yb = B.bbox("Y201")
     fails += B.pack(["C201", "C202"], yb[0] - 1.8, yb[3] + 0.3, yb[2], yb[3] + 5.0, prefer_narrow=True)
     done(["C201", "C202"])
 
     # USB / CH340 / auto-boot  (trai)
-    usb = R("U", 301, 302) + R("Q", 301, 303) + R("R", 301, 308)
-    rest = B.pack(usb, 9.8, 32.6, B.bbox("Y201")[0] - 0.4, 52.4)
-    fails += B.pack(rest, 0.3, 45.6, 9.6, 52.4)
+    usb = R("U", 301, 302) + R("Q", 301, 303) + R("R", 301, 308) + ["JP301"]
+    rest = B.pack(usb, B.bbox("J301")[2] + 0.5, 38.2, B.bbox("Y201")[0] - 0.5, 60.5)
+    fails += B.pack(rest, 0.5, B.bbox("J301")[3] + 0.5, 12.0, 60.5)
     done(usb)
     usb_bot = ["J201"] + R("C", 301, 304) + R("F", 301, 301)
-    fails += B.pack(usb_bot, B.bbox("J301")[2] + 0.6, 33.5, 23.5, 52.0, bottom=True, sort=True)
+    fails += B.pack(usb_bot, B.bbox("J301")[2] + 0.6, 38.2, 33.0, 60.0, bottom=True, sort=True)
     done(usb_bot)
 
-    # nut nhan + LED trang thai: giua MCU va W5500, phia tren (chua kenh SPI o duoi)
-    ui = ["SW201", "SW202", "D201", "R203", "D202", "R204"]
-    fails += B.pack(ui, B.bbox("U200")[2] + 0.3, 32.6, B.bbox("U400")[0] - 0.2, 42.6, sort=True, gap=0.25)
+    # nut nhan + LED trang thai: giua MCU va W5500, phia tren
+    ui = ["SW201", "SW202", "U201", "FB102", "R201", "R202", "D201", "R203", "D202", "R204"]
+    fails += B.pack(ui, B.bbox("U200")[2] + 0.5, 38.2, B.bbox("U400")[0] - 0.5, 45.5, sort=True)
     done(ui)
-    # duoi MCU (ben phai header J702)
-    below = ["JP301", "U201", "R201", "R202", "D103", "D107", "FB102"]
-    fails += B.pack(below, 1.0, 53.3, B.bbox("J702")[0] - 0.5, 59.8)
-    done(below)
 
     # W5500 group (giua U400 va RJ45)
     rj_left = B.bbox("J401")[0] - 0.3
     eth_top = ["Y401", "C403", "C404", "R401", "R402", "R403", "R404", "R405", "R406", "R407",
                "C411", "C413", "R408", "R409"]
-    fails += B.pack(eth_top, B.bbox("U400")[2] + 0.3, 33.2, rj_left, 53.0)
+    fails += B.pack(eth_top, B.bbox("U400")[2] + 0.4, 38.2, rj_left, 58.0)
     done(eth_top)
 
-    # analog: header + top protection parts
-    ana_top = [x for k in range(10) for x in (f"F{701 + k}", f"D{701 + k}", f"R{701 + 4 * k}")] + ["F711"]
-    fails += B.pack(ana_top, 0.5, 60.6, 47.0, 71.3)
+    # analog: PTC + TVS thang hang ngay tren chan cau dau J701 cua tung kenh
+    for k in range(10):
+        px = 10.0 + 3.81 * k
+        B.put(f"F{701 + k}", px, 79.0, 90)
+        B.put(f"D{701 + k}", px, 74.5, 90)
+        done([f"F{701 + k}", f"D{701 + k}"])
+    ana_top = [f"R{701 + 4 * k}" for k in range(10)] + [f"R{704 + 4 * k}" for k in range(10)] + ["F711"]
+    fails += B.pack(ana_top, 0.6, 62.6, 56.0, 71.6)
     done(ana_top)
-    ana_bot = [f"R{702 + 4 * k + j}" for k in range(10) for j in range(3)] + R("C", 701, 710)
-    ana_bot = [x for k in range(10) for x in (f"R{702 + 4 * k}", f"R{703 + 4 * k}", f"R{704 + 4 * k}", f"C{701 + k}")]
-    fails += B.pack(ana_bot, 1.0, B.bbox("J702")[3] + 0.4, 47.0, 71.0, bottom=True)
+    ana_bot = [f"C{701 + k}" for k in range(10)]
+    fails += B.pack(ana_bot, 1.0, 63.0, 56.0, 81.0, bottom=True)
     done(ana_bot)
 
-    # RS485
-    rs = ["U401", "D401", "D402", "JP401", "R410", "R411", "R412", "R413"]
-    fails += B.pack(rs, 47.6, 53.6, 58.6, 71.3, sort=True)
-    done(rs)
-
-    # power
+    # nguon
     pw_top = ["L101", "F101", "D101", "D102", "C101", "C102", "FB101", "C103", "C105", "U101", "D104",
-              "C108", "D105", "D106", "U102", "L102", "F711"]
+              "C108", "D105", "D106", "U102", "L102", "D103", "D107"]
     pw_top = [r for r in pw_top if r in refs and r not in placed]
-    fails += B.pack(pw_top, 59.0, 53.6, 99.6, 71.3, sort=True)
+    fails += B.pack(pw_top, 75.5, 60.0, W - 0.6, 81.2, sort=True)
     done(pw_top)
-    pw_bot = [r for r in ["C104", "C106", "C107", "C112", "C114", "R101", "R102", "C110", "C111", "C113", "C109"] if r in refs]
-    fails += B.pack(pw_bot, 64.0, 54.0, 99.0, 71.0, bottom=True)
+    pw_bot = [r for r in ["C104", "C106", "C107", "C112", "C114", "R101", "R102", "C110", "C111", "C113", "C109"]
+              if r in refs]
+    fails += B.pack(pw_bot, 76.0, 60.5, W - 1.0, 81.0, bottom=True)
     done(pw_bot)
 
     # fan-out nguon cho QFP (sau khi da dat linh kien mat tren), roi moi dat tu mat duoi
@@ -575,6 +580,7 @@ def main():
     ds.m_CopperEdgeClearance = MM(0.3)
     ds.m_HoleClearance = MM(0.18)
     edge_keepout(B)
+    iso_barrier(B)
     bad, out = B.overlaps()
     print("pack failed:", fails)
     print("not placed:", left)
@@ -582,8 +588,8 @@ def main():
     print("outside board:", out)
     # title on silkscreen
     t = pcbnew.PCB_TEXT(B.b)
-    t.SetText("PLC STM32F407 MODBUS TCP - 16DO/10AI  v1.0")
-    t.SetPosition(P(50, 18.0))
+    t.SetText("PLC STM32F407 MODBUS TCP - 16DO/10AI  v1.1")
+    t.SetPosition(P(60, 45.0))
     t.SetLayer(pcbnew.B_SilkS)
     t.SetMirrored(True)
     t.SetTextSize(pcbnew.VECTOR2I(MM(1.2), MM(1.2)))

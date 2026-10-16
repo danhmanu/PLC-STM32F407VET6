@@ -240,7 +240,7 @@
       "internal_id": "",
       "mfg": "",
       "mpn": "",
-      "sch_revision": ""
+      "sch_revision": "1.0"
     },
     "layer_pairs": [],
     "layer_presets": [],
@@ -789,13 +789,42 @@
       {
         "filename": "PLC_STM32_Modbus.kicad_sch",
         "name": "PLC_STM32_Modbus",
-        "uuid": "00000000-0000-0000-0000-000000000000"
+        "uuid": "2be3e191-9af5-421c-aa34-3e3c37fa6c43"
       }
     ],
     "used_designators": "",
     "variants": []
   },
-  "sheets": [],
+  "sheets": [
+    [
+      "2be3e191-9af5-421c-aa34-3e3c37fa6c43",
+      "PLC_STM32_Modbus"
+    ],
+    [
+      "93002541-49c4-4467-95e1-2369a741895d",
+      "Nguon 24VDC"
+    ],
+    [
+      "2e10821f-3fa6-47bc-9f8c-ae89e4245afb",
+      "MCU STM32F407VET6"
+    ],
+    [
+      "1042b566-422e-4124-aa3b-83dc0550c5de",
+      "USB nap code"
+    ],
+    [
+      "3e565d69-caf8-49a1-95ba-4121dd05ad34",
+      "Ethernet"
+    ],
+    [
+      "f464d4a3-4e06-4eee-a55a-1f3ed75adb20",
+      "16 ngo ra transistor"
+    ],
+    [
+      "ebeddc3f-7a1d-4247-8ef6-eb39dd8dabfe",
+      "10 ngo vao analog"
+    ]
+  ],
   "text_variables": {},
   "tuning_profiles": {
     "meta": {

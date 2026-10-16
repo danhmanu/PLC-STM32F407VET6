@@ -142,9 +142,10 @@ class LibSymbol:
                 at = find(p, "at")
                 num = find(p, "number")[1]
                 nm = find(p, "name")[1]
+                ln = find(p, "length")
                 self.pins.setdefault(num, []).append(dict(
                     unit=unit, x=float(at[1]), y=float(at[2]), ang=float(at[3]),
-                    name=nm, etype=str(p[1])))
+                    name=nm, etype=str(p[1]), len=float(ln[1]) if ln else 2.54))
         self.units = max([d["unit"] for v in self.pins.values() for d in v] + [1])
 
     def embedded(self):
@@ -221,6 +222,14 @@ class Sheet:
         self.texts = []
         self.pin_points = []
         self.wire_ends = []
+        self.wsegs = []          # (x1, y1, x2, y2) moi day da ve
+        self.bodies = []         # (x0, y0, x1, y1) than linh kien
+        self.pinlines = []       # (ex, ey, bx, by) doan chan: dau noi -> than
+        self.pending = []        # dict(net, x, y, out, stub, pin)
+        self.textboxes = []      # (x0, y0, x1, y1)
+        self.route = True        # tu di day net cuc bo
+        self.routed_nets = []
+        self.label_nets = []
 
     # -- helpers
     def _use(self, ls):
@@ -235,14 +244,19 @@ class Sheet:
         return pts[-1]
 
     def label_at(self, net, x, y, outward):
-        self.net_at(net, round(x, 4), round(y, 4), outward)
+        if net in POWER_NETS or not self.route:
+            self.net_at(net, round(x, 4), round(y, 4), outward)
+        else:
+            self.pending.append(dict(net=net, x=round(x, 4), y=round(y, 4), out=outward, stub=0, pin=False))
 
     def wire(self, x1, y1, x2, y2):
         self.wire_ends += [(round(x1, 4), round(y1, 4)), (round(x2, 4), round(y2, 4))]
+        self.wsegs.append((round(x1, 4), round(y1, 4), round(x2, 4), round(y2, 4)))
         self.items.append(S("wire", S("pts", S("xy", x1, y1), S("xy", x2, y2)),
                             S("stroke", S("width", 0), S("type", Sym("solid"))), S("uuid", uid())))
 
     def text(self, x, y, s, size=2.0):
+        self.textboxes.append((x, y - size * 1.2, x + len(s) * size * 0.62, y + 0.3))
         self.items.append(S("text", s, S("exclude_from_sim", Sym("no")), S("at", x, y, 0),
                             S("effects", S("font", S("size", size, size)), S("justify", Sym("left"), Sym("bottom"))),
                             S("uuid", uid())))
@@ -313,6 +327,40 @@ class Sheet:
         self.items.append(node)
         self.symbols.append(node)
         handle = Placed(ref)
+        gx, gy = [], []
+        for sub in findall(ls.node, "symbol"):
+            m = re.match(r".*_(\d+)_(\d+)$", sub[1])
+            if m and int(m.group(1)) not in (0, unit):
+                continue
+            for g in sub[2:]:
+                if not isinstance(g, list):
+                    continue
+                pts = []
+                if g[0] == "rectangle":
+                    pts = [find(g, "start")[1:3], find(g, "end")[1:3]]
+                elif g[0] in ("polyline", "bezier"):
+                    pts = [q[1:3] for q in findall(find(g, "pts"), "xy")]
+                elif g[0] == "circle":
+                    c0, r0 = find(g, "center"), float(find(g, "radius")[1])
+                    pts = [(float(c0[1]) - r0, float(c0[2]) - r0), (float(c0[1]) + r0, float(c0[2]) + r0)]
+                elif g[0] == "arc":
+                    pts = [find(g, k)[1:3] for k in ("start", "mid", "end")]
+                for q in pts:
+                    tx, ty = xform(float(q[0]), float(q[1]), rot, mirror)
+                    gx.append(x + tx)
+                    gy.append(y + ty)
+        for num, lst in ls.pins.items():
+            for d in lst:
+                if d["unit"] in (0, unit):
+                    ex, ey = xform(d["x"], d["y"], rot, mirror)
+                    L = d.get("len", 2.54)
+                    bx, by = xform(d["x"] + L * math.cos(math.radians(d["ang"])),
+                                   d["y"] + L * math.sin(math.radians(d["ang"])), rot, mirror)
+                    self.pinlines.append((x + ex, y + ey, x + bx, y + by))
+                    gx.append(x + bx)
+                    gy.append(y + by)
+        if gx and not ls.power:
+            self.bodies.append((min(gx), min(gy), max(gx), max(gy)))
         for num, lst in ls.pins.items():
             for d in lst:
                 if d["unit"] in (0, unit):
@@ -340,10 +388,13 @@ class Sheet:
             if net == "NC":
                 self.no_connect(px, py)
                 continue
-            ex, ey = round(px + ox * stub, 4), round(py + oy * stub, 4)
-            if stub:
-                self.wire(px, py, ex, ey)
-            self.net_at(net, ex, ey, (ox, oy))
+            if net in POWER_NETS or not self.route:
+                ex, ey = round(px + ox * stub, 4), round(py + oy * stub, 4)
+                if stub:
+                    self.wire(px, py, ex, ey)
+                self.net_at(net, ex, ey, (ox, oy))
+            else:
+                self.pending.append(dict(net=net, x=px, y=py, out=(ox, oy), stub=stub, pin=True))
         return handle
 
     def net_at(self, net, x, y, outward):
@@ -374,6 +425,11 @@ class Sheet:
             node.append(S("instances", S("project", PROJECT, S("path", "__PATH__", S("reference", ref), S("unit", 1)))))
             self.items.append(node)
             self.symbols.append(node)
+            # than power symbol: tu o ke diem noi, keo dai 3mm theo huong ra, rong +-1.3mm
+            ax, ay = x + ox * 1.27, y + oy * 1.27
+            bx2, by2 = x + ox * 3.0, y + oy * 3.0
+            self.bodies.append((min(ax, bx2) - abs(oy) * 1.3, min(ay, by2) - abs(ox) * 1.3,
+                                max(ax, bx2) + abs(oy) * 1.3, max(ay, by2) + abs(ox) * 1.3))
             return
         ang = {(1, 0): 0, (0, -1): 90, (-1, 0): 180, (0, 1): 270}[(ox, oy)]
         self.nets_used.append((net, x, y, ang))
@@ -387,7 +443,112 @@ class Sheet:
                 self.items.append(S("junction", S("at", pt[0], pt[1]), S("diameter", 0),
                                     S("color", 0, 0, 0, 0), S("uuid", uid())))
 
+    def route_pending(self, global_nets):
+        """Global net -> doan ngan + nhan global; net cuc bo -> di day that (that bai -> nhan)."""
+        import schroute as sr
+        from collections import defaultdict
+        W = {"A3": 420, "A2": 594, "A4": 297}[self.paper]
+        Hh = {"A3": 297, "A2": 420, "A4": 210}[self.paper]
+        local = defaultdict(list)
+        for pd in self.pending:
+            if pd["net"] in global_nets or not self.route:
+                self._stub_label(pd)
+            else:
+                local[pd["net"]].append(pd)
+        grid = sr.Grid(W, Hh)
+        for (x0, y0, x1, y1) in self.bodies:
+            grid.block_box(x0, y0, x1, y1)
+        for (x0, y0, x1, y1) in self.textboxes:
+            grid.block_box(x0, y0, x1, y1)
+        for (ex, ey, bx, by) in self.pinlines:
+            grid.block_box(ex, ey, bx, by)
+        for k, (x1, y1, x2, y2) in enumerate(self.wsegs):
+            grid.add_segment((sr.gc(x1), sr.gc(y1)), (sr.gc(x2), sr.gc(y2)), "?%d" % k)
+        for (net, x, y, ang) in self.nets_used:          # nhan da co (global / power)
+            ln = len(net) * 0.75 + 2.5
+            dx, dy = {0: (1, 0), 90: (0, -1), 180: (-1, 0), 270: (0, 1)}[ang]
+            grid.block_box(x + dx * 0.5, y + dy * 0.5, x + dx * ln, y + dy * ln)
+            grid.mark((sr.gc(x), sr.gc(y)), "#lbl", "N")
+        for pt in self.pin_points:                        # moi dau chan: mac dinh la vat can
+            c = (sr.gc(pt[0]), sr.gc(pt[1]))
+            grid.blocked.discard(c)
+            grid.mark(c, "#pin", "N")
+        terms_by_net = {}
+        for net, lst in local.items():
+            terms = []
+            okg = True
+            for pd in lst:
+                if not sr.on_grid(pd["x"], pd["y"]):
+                    okg = False
+                c = (sr.gc(pd["x"]), sr.gc(pd["y"]))
+                grid.blocked.discard(c)
+                occ = grid.occ.setdefault(c, {})
+                for k2 in [k2 for k2 in occ if k2.startswith("#") or k2.startswith("?")]:
+                    del occ[k2]
+                grid.mark(c, net, "N")
+                terms.append((c, pd["out"]))
+            terms_by_net[net] = (terms, okg)
+        # giu cho doan day ngan + diem dat nhan (phong khi net phai quay ve dung nhan)
+        for net, lst in local.items():
+            for pd in lst:
+                n_st = int(round(pd["stub"] / sr.G))
+                if n_st <= 0:
+                    continue
+                c = (sr.gc(pd["x"]), sr.gc(pd["y"]))
+                e = (c[0] + pd["out"][0] * n_st, c[1] + pd["out"][1] * n_st)
+                grid.add_segment(c, e, net)
+        order = sorted(terms_by_net, key=lambda n: (len(terms_by_net[n][0]), n))
+        routed = {}
+        for net in order:
+            terms, okg = terms_by_net[net]
+            if len(terms) < 2 or len(terms) > 24 or not okg:
+                continue
+            small = len(terms) <= 3
+            paths = sr.route_net(grid, net, terms, max_len_cells=260 if small else 90,
+                                 max_expand=250000 if small else 60000)
+            if paths:
+                routed[net] = paths
+        G = sr.G
+        for net, lst in local.items():
+            if net in routed:
+                segs = [sg for pth in routed[net] for sg in sr.path_segments(pth)]
+                nodes = set()
+                for a, b in segs:
+                    nodes.add(a)
+                    nodes.add(b)
+                for a, b in segs:                         # tach doan tai diem T
+                    cuts = [a, b]
+                    for n_ in nodes:
+                        if n_ in (a, b):
+                            continue
+                        if a[0] == b[0] == n_[0] and min(a[1], b[1]) < n_[1] < max(a[1], b[1]):
+                            cuts.append(n_)
+                        elif a[1] == b[1] == n_[1] and min(a[0], b[0]) < n_[0] < max(a[0], b[0]):
+                            cuts.append(n_)
+                    cuts.sort()
+                    for p1, p2 in zip(cuts, cuts[1:]):
+                        self.wire(round(p1[0] * G, 4), round(p1[1] * G, 4), round(p2[0] * G, 4), round(p2[1] * G, 4))
+                # 1 nhan ten tren day (giu ten net, de tim kiem): uu tien doan ngang dai nhat
+                hs = [sg for sg in segs if sg[0][1] == sg[1][1] and sg[0] != sg[1]] or segs
+                a0, b0 = max(hs, key=lambda sg: abs(sg[0][0] - sg[1][0]) + abs(sg[0][1] - sg[1][1]))
+                lx, ly = (min(a0[0], b0[0]), a0[1]) if a0[1] == b0[1] else (a0[0], min(a0[1], b0[1]))
+                ang = 0 if a0[1] == b0[1] else 90
+                self.nets_used.append((net, round(lx * G, 4), round(ly * G, 4), ang))
+            else:
+                for pd in lst:
+                    self._stub_label(pd)
+        self.routed_nets = sorted(routed)
+        self.label_nets = sorted(set(local) - set(routed))
+
+    def _stub_label(self, pd):
+        x, y, (ox, oy), stub = pd["x"], pd["y"], pd["out"], pd["stub"]
+        ex, ey = round(x + ox * stub, 4), round(y + oy * stub, 4)
+        if stub:
+            self.wire(x, y, ex, ey)
+        self.net_at(pd["net"], ex, ey, (ox, oy))
+
     def finalize_labels(self, global_nets):
+        self.route_pending(global_nets)
         self.add_junctions()
         for net, x, y, ang in self.nets_used:
             just = Sym("left") if ang in (0, 90) else Sym("right")
@@ -428,6 +589,8 @@ def write_project(outdir, root, sheets):
     for sh in [root] + sheets:
         for net, *_ in sh.nets_used:
             where[net].add(sh.name)
+        for pd in sh.pending:
+            where[pd["net"]].add(sh.name)
     global_nets = {n for n, s in where.items() if len(s) > 1}
     # single-use nets warning
     singles = []
