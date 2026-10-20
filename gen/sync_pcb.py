@@ -27,6 +27,8 @@ def read_netlist():
         sp = kisch.find(c, "sheetpath")
         paths[kisch.find(c, "ref")[1]] = kisch.find(sp, "tstamps")[1] + kisch.find(c, "tstamps")[1]
         values[kisch.find(c, "ref")[1]] = kisch.find(c, "value")[1]
+        fpn = kisch.find(c, "footprint")
+        values["#fp:" + kisch.find(c, "ref")[1]] = fpn[1] if fpn else ""
     paths["#values"] = values
     for n in kisch.find(t, "nets")[1:]:
         name = kisch.find(n, "name")[1]
@@ -43,6 +45,30 @@ def sync(path, paths, node_net):
         if (r not in paths or r == "#values") and not r.startswith("H"):
             removed.append(r)
             b.RemoveNative(fp)
+    # doi footprint neu so do da doi (giu vi tri, huong, mat)
+    FPDIR = r"C:\Program Files\KiCad\10.0\share\kicad\footprints"
+    swapped = []
+    for fp in list(b.GetFootprints()):
+        r = fp.GetReference()
+        want = paths["#values"].get("#fp:" + r)
+        have = "%s:%s" % (fp.GetFPID().GetLibNickname(), fp.GetFPID().GetLibItemName())
+        if want and want != have:
+            lib, name = want.split(":", 1)
+            nf = pcbnew.FootprintLoad(os.path.join(FPDIR, lib + ".pretty"), name)
+            nf.SetFPID(pcbnew.LIB_ID(lib, name))
+            nf.SetReference(r)
+            nf.SetValue(fp.GetValue())
+            nf.SetPosition(fp.GetPosition())
+            if fp.IsFlipped():
+                nf.Flip(nf.GetPosition(), pcbnew.FLIP_DIRECTION_LEFT_RIGHT)
+            nf.SetOrientation(fp.GetOrientation())
+            nf.Reference().SetTextSize(fp.Reference().GetTextSize())
+            nf.Reference().SetTextThickness(fp.Reference().GetTextThickness())
+            b.RemoveNative(fp)
+            b.Add(nf)
+            swapped.append((r, have, want))
+    if swapped:
+        print("  doi footprint:", swapped)
     # anh xa net cu -> net moi theo pad
     votes = defaultdict(Counter)
     for fp in b.GetFootprints():

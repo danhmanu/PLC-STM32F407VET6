@@ -502,10 +502,11 @@ def layout(B, comps):
     # analog: PTC + TVS thang hang ngay tren chan cau dau J701 cua tung kenh
     for k in range(10):
         px = 10.0 + 3.81 * k
-        B.put(f"F{701 + k}", px, 79.0, 90)
         B.put(f"D{701 + k}", px, 74.5, 90)
-        done([f"F{701 + k}", f"D{701 + k}"])
-    ana_top = [f"R{701 + 4 * k}" for k in range(10)] + [f"R{704 + 4 * k}" for k in range(10)] + ["F711"]
+        done([f"D{701 + k}"])
+    B.put("F711", 52.5, 66.0, 0)                       # PTC 0.5A nguon nuoi cam bien (1812)
+    done(["F711"])
+    ana_top = [f"R{701 + 4 * k}" for k in range(10)] + [f"R{704 + 4 * k}" for k in range(10)]
     fails += B.pack(ana_top, 0.6, 62.6, 56.0, 71.6)
     done(ana_top)
     ana_bot = [f"C{701 + k}" for k in range(10)]

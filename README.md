@@ -27,7 +27,7 @@ Mạch nguyên lý KiCad 10 cho bộ PLC: điều khiển qua LAN bằng **Modbu
 | **USB nạp code** | USB‑C, USBLC6 chống tĩnh điện, polyfuse 500mA, **CH340C → USART1** (cổng bootloader của STM32), mạch tự vào bootloader bằng DTR/RTS (2×MMBT3904 + MMBT3906), jumper AUTO‑BOOT |
 | **Ethernet** | W5500 + RJ45 HR911105A (có sẵn biến áp), thạch anh 25MHz – Modbus TCP |
 | **16 ngõ ra transistor** | Mỗi kênh: opto **PC817 (SMD‑4, cách ly 5000 Vrms)** → **MOSFET DMN6075S (60V/2.5A)**, diode dập SS16, LED báo phía tải. Kiểu ngõ ra **sink (NPN)**: tải đấu giữa V+ và Yn |
-| **10 ngõ vào analog (chỉ 4–20mA)** | Mỗi kênh: PTC 50mA, TVS SMF5.0CA, **shunt 120Ω 0.1% 25ppm**, lọc RC 4.7k/100nF vào ADC. Có cầu đấu nguồn loop 24V (qua PTC 200mA) cho cảm biến 2 dây |
+| **10 ngõ vào analog (chỉ 4–20mA)** | Mỗi kênh: TVS SMF5.0CA, **shunt 120Ω 0.1% 25ppm**, lọc RC 4.7k/100nF vào ADC (không có cầu chì từng kênh). Cầu đấu J703 cấp nguồn 24V nuôi cảm biến 2 dây, qua PTC F711 **0.5A/60V (MF‑MSMF050‑2, gói 1812)** |
 
 ## Cách đọc sơ đồ
 
@@ -38,7 +38,15 @@ Mạch nguyên lý KiCad 10 cho bộ PLC: điều khiển qua LAN bằng **Modbu
 - **Một số net vẫn giữ dạng nhãn**, vì nếu kéo dây thật sẽ phải băng ngang cả trang:
   - Hai rail ngõ ra **V24_OUT / COM_OUT** (37–53 điểm nối).
   - Một số đường **Yn** ra cầu đấu J501/J502.
-  - Vài đường **AIx_T** ra cầu đấu J701.
+
+**Ghi chú trên sơ đồ:**
+- Ghi chú màu xanh (font Arial, tiếng Việt có dấu) đặt **ngay cạnh linh kiện / khối mà nó giải thích** (vị trí được tìm tự động để không đè lên ký hiệu, dây, nhãn):
+  - Mỗi khối mạch có một tiêu đề in đậm nêu tác dụng của khối.
+  - Mỗi linh kiện hoặc nhóm linh kiện có ghi chú ngắn về vai trò của nó.
+  - Với 16 kênh ngõ ra và 10 kênh analog (giống nhau), ghi chú chi tiết đặt ở kênh đầu tiên.
+  - **Cách tính giá trị**: dòng LED, cầu chia gate MOSFET, gợn dòng/gợn áp bộ buck, tụ tải thạch anh, điện trở shunt 4–20mA, tần số cắt bộ lọc RC, trở phối hợp Ethernet…
+- Trang tổng quan (root) tóm tắt toàn hệ thống.
+- Nội dung ghi chú nằm trong `gen/notes.py`; sửa ở đó rồi chạy `sh gen/run.sh` để cập nhật.
 
 **Tìm nhanh một net trong Eeschema:**
 - Bấm vào dây hoặc nhãn rồi nhấn **`** (phím dấu huyền) để tô sáng cả net.
@@ -75,7 +83,8 @@ Mạch nguyên lý KiCad 10 cho bộ PLC: điều khiển qua LAN bằng **Modbu
   - **2 dây (loop‑powered):** 24V loop (J703) → (+) cảm biến → (−) cảm biến → AIn (J701).
   - **4 dây:** ngõ ra mA của cảm biến → AIn; chân 0V của cảm biến → GND (J703).
 - **Firmware:** `I(mA) = raw / 4095 × 3000 / 120`. Nên hiệu chuẩn offset/gain cho từng kênh và lưu vào Holding Register.
-- **Bảo vệ khi đấu nhầm 24V vào AIn:** TVS 5V kẹp áp, trở 4.7k giới hạn dòng vào chân ADC ở khoảng 1mA, PTC 50mA ngắt sau đó.
+- **Bảo vệ:** TVS 5V kẹp xung/quá áp; trở 4.7k giới hạn dòng vào chân ADC ở khoảng 1mA.
+- ⚠️ **Không có cầu chì từng kênh:** nếu đấu nhầm 24V thẳng vào chân AI, dòng 24V/120Ω = 200mA (4.8W) sẽ **cháy shunt 120Ω và TVS** của kênh đó. Chân ADC vẫn an toàn. Kiểm tra kỹ dây trước khi cấp điện.
 
 ## Ngõ ra transistor
 
@@ -146,9 +155,9 @@ Mạch nguyên lý KiCad 10 cho bộ PLC: điều khiển qua LAN bằng **Modbu
 
 ### Trạng thái đi dây – CẦN HOÀN THIỆN TRƯỚC KHI ĐẶT MẠCH
 
-- Freerouting + script đi được **573/604 kết nối (~94.9%)**. **Còn 31 kết nối** cần nối tay; danh sách kèm tọa độ ở `kicad/unrouted.txt`:
+- Freerouting + script đi được **565/594 kết nối (~95.1%)**. **Còn 29 kết nối** cần nối tay; danh sách kèm tọa độ ở `kicad/unrouted.txt`:
   - +3V3 (13) và GND (3) quanh chân nguồn STM32/W5500.
-  - Tín hiệu: UART1_RX/TX, NRST, DO1, LED_RUN, AI5/6/8_ADC, AI2/5/10_IN.
+  - Tín hiệu: UART1_RX/TX, NRST, DO1, LED_RUN, AI5/6/8_ADC, AI5_IN.
   - USB: VBUS_C (2), CC1. Nguồn: +24V (1).
 - **DRC hiện tại:**
   - 0 lỗi điện (chập, khoảng cách, lỗ khoan). Không lệch so với sơ đồ nguyên lý.

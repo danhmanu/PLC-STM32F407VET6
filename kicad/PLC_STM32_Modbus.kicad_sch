@@ -2,7 +2,7 @@
 	(version 20260306)
 	(generator "eeschema")
 	(generator_version "10.0")
-	(uuid "2be3e191-9af5-421c-aa34-3e3c37fa6c43")
+	(uuid "37f83b27-af1f-47e2-955d-ae7b100230f9")
 	(paper "A3")
 	(title_block
 		(title "PLC STM32F407 Modbus TCP - 16DO / 10AI")
@@ -21,52 +21,34 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d0f5ecf7-e42a-4686-a121-d8f45426b115")
+		(uuid "7aa8d82a-7fe9-4c9f-a24f-b9df76537470")
 	)
-	(sheet
-		(at 180 40)
-		(size 60 25)
+	(text "TỔNG QUAN HỆ THỐNG – PLC STM32F407 + W5500 (Modbus TCP)"
 		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "1042b566-422e-4124-aa3b-83dc0550c5de")
-		(property "Sheetname" "USB nap code"
-			(at 180 39.2 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-				(justify left bottom)
+		(at 30 125 0)
+		(effects
+			(font
+				(face "Arial")
+				(size 2 2)
+				(bold yes)
+				(color 0 0 132 1)
 			)
+			(justify left top)
 		)
-		(property "Sheetfile" "usb.kicad_sch"
-			(at 180 65.6 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
+		(uuid "87ccea0b-b988-4206-b2a8-e15f3f12c2ed")
+	)
+	(text "• Nguồn 24VDC → bảo vệ (PTC, chống ngược, TVS) + lọc nhiễu → buck 5V → LDO 3.3V; +3.3VA riêng cho ADC.\n• MCU STM32F407VET6 (168MHz): 16 ngõ ra DO1–DO16, 10 ngõ vào 4–20mA (ADC 12-bit, VREF 3.000V), SPI2 → W5500.\n• Ethernet W5500 + RJ45: Modbus TCP cổng 502, tối đa 8 kết nối. Coil 00001–00016 = DO1–DO16; Input Register 30001–30010 = AI1–AI10.\n• USB-C + CH340C: nạp chương trình qua bootloader UART (tự vào boot bằng DTR/RTS), cổng debug.\n• 16 ngõ ra: opto PC817 (cách ly 5kV) + MOSFET 60V/2.5A, kiểu sink, nguồn tải V+/COM riêng 12–30V.\n• 10 ngõ vào 4–20mA: TVS + shunt 120Ω + lọc RC; J703 cấp 24V (PTC 0.5A) nuôi cảm biến 2 dây.\n• Ghi chú chi tiết (tác dụng, cách tính giá trị) đặt ngay cạnh từng linh kiện ở các trang con."
+		(exclude_from_sim no)
+		(at 30 128.4 0)
+		(effects
+			(font
+				(face "Arial")
+				(size 1.6 1.6)
+				(color 0 0 132 1)
 			)
+			(justify left top)
 		)
-		(instances
-			(project "PLC_STM32_Modbus"
-				(path "/2be3e191-9af5-421c-aa34-3e3c37fa6c43"
-					(page "4")
-				)
-			)
-		)
+		(uuid "abac929c-2217-4831-9457-383cedc2798f")
 	)
 	(sheet
 		(at 105 40)
@@ -82,7 +64,7 @@
 		(fill
 			(color 0 0 0 0)
 		)
-		(uuid "2e10821f-3fa6-47bc-9f8c-ae89e4245afb")
+		(uuid "8049447a-38bb-4a7f-a882-4045c407e9fe")
 		(property "Sheetname" "MCU STM32F407VET6"
 			(at 105 39.2 0)
 			(show_name no)
@@ -108,7 +90,7 @@
 		(instances
 			(project "PLC_STM32_Modbus"
 				(path "/2be3e191-9af5-421c-aa34-3e3c37fa6c43"
-					(page "3")
+					(page "4")
 				)
 			)
 		)
@@ -127,7 +109,7 @@
 		(fill
 			(color 0 0 0 0)
 		)
-		(uuid "3e565d69-caf8-49a1-95ba-4121dd05ad34")
+		(uuid "a3cf3655-676c-4093-bba4-0b155864c88c")
 		(property "Sheetname" "Ethernet"
 			(at 255 39.2 0)
 			(show_name no)
@@ -153,7 +135,7 @@
 		(instances
 			(project "PLC_STM32_Modbus"
 				(path "/2be3e191-9af5-421c-aa34-3e3c37fa6c43"
-					(page "5")
+					(page "7")
 				)
 			)
 		)
@@ -172,7 +154,7 @@
 		(fill
 			(color 0 0 0 0)
 		)
-		(uuid "93002541-49c4-4467-95e1-2369a741895d")
+		(uuid "a784ae94-d37f-4796-9282-a027cea8ecae")
 		(property "Sheetname" "Nguon 24VDC"
 			(at 30 39.2 0)
 			(show_name no)
@@ -204,51 +186,6 @@
 		)
 	)
 	(sheet
-		(at 105 85)
-		(size 60 25)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "ebeddc3f-7a1d-4247-8ef6-eb39dd8dabfe")
-		(property "Sheetname" "10 ngo vao analog"
-			(at 105 84.2 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "analog.kicad_sch"
-			(at 105 110.6 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "PLC_STM32_Modbus"
-				(path "/2be3e191-9af5-421c-aa34-3e3c37fa6c43"
-					(page "7")
-				)
-			)
-		)
-	)
-	(sheet
 		(at 30 85)
 		(size 60 25)
 		(exclude_from_sim no)
@@ -262,7 +199,7 @@
 		(fill
 			(color 0 0 0 0)
 		)
-		(uuid "f464d4a3-4e06-4eee-a55a-1f3ed75adb20")
+		(uuid "bc60d3e2-d21c-405f-88d9-d0d594cc740a")
 		(property "Sheetname" "16 ngo ra transistor"
 			(at 30 84.2 0)
 			(show_name no)
@@ -288,7 +225,97 @@
 		(instances
 			(project "PLC_STM32_Modbus"
 				(path "/2be3e191-9af5-421c-aa34-3e3c37fa6c43"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 180 40)
+		(size 60 25)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "d19a194c-fb5a-4781-ad49-2dd4d4a0d941")
+		(property "Sheetname" "USB nap code"
+			(at 180 39.2 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "usb.kicad_sch"
+			(at 180 65.6 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "PLC_STM32_Modbus"
+				(path "/2be3e191-9af5-421c-aa34-3e3c37fa6c43"
 					(page "6")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 105 85)
+		(size 60 25)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "d3f267e6-5dde-4d94-a4c9-f9c8f638a844")
+		(property "Sheetname" "10 ngo vao analog"
+			(at 105 84.2 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "analog.kicad_sch"
+			(at 105 110.6 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "PLC_STM32_Modbus"
+				(path "/2be3e191-9af5-421c-aa34-3e3c37fa6c43"
+					(page "5")
 				)
 			)
 		)

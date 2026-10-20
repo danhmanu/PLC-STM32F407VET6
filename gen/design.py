@@ -370,18 +370,15 @@ def sheet_outputs():
 
 # =================================================================== ANALOG
 def ai_channel(sh, n, X, Y):
-    """Chi 4-20mA: PTC -> TVS 5V -> shunt 120R 0.1% (20mA -> 2.40V) -> loc 4.7k/100nF -> ADC."""
+    """Chi 4-20mA: TVS 5V -> shunt 120R 0.1% (20mA -> 2.40V) -> loc 4.7k/100nF -> ADC (khong PTC)."""
     X, Y = kisch.snap(X), kisch.snap(Y)
     k = n - 1
-    t = f"AI{n}_T"
-    ptc = sh.place("Device:Polyfuse", f"F{701 + k}", "50mA", X + 7.62, Y, 90, {1: t}, footprint=fp_ok(PTC0805))
     tvs = sh.place("Device:D_TVS", f"D{701 + k}", "SMF5.0CA", X + 15.24, Y + 3.81, 90, {1: "GND"},
                    footprint=fp_ok(SOD123F))
     rsh = sh.place("Device:R", f"R{701 + 4 * k}", "120 0.1% 25ppm", X + 22.86, Y + 3.81, 0, {2: "GND"},
                    footprint=fp_ok(R1206))
     rf = sh.place("Device:R", f"R{704 + 4 * k}", "4.7k", X + 30.48, Y, 90, {}, footprint=fp_ok(R0603))
     cf = sh.place("Device:C", f"C{701 + k}", "100nF", X + 38.1, Y + 3.81, 0, {2: "GND"}, footprint=fp_ok(C0603))
-    sh.path(ptc.p(2), tvs.p(2))
     sh.path(tvs.p(2), rsh.p(1))
     sh.path(rsh.p(1), rf.p(1))
     sh.label_at(f"AI{n}_IN", *rsh.p(1), (0, -1))
@@ -399,10 +396,10 @@ def sheet_analog():
         col, row = ch % 2, ch // 2
         ai_channel(sh, ch + 1, 30 + col * 95, 45 + row * 42)
     sh.place("Connector:Screw_Terminal_01x10", "J701", "AI 1-10 (4-20mA)", 250, 60, 0,
-             {i + 1: f"AI{i + 1}_T" for i in range(10)}, footprint=fp_ok(tb(10)), mirror="y")
+             {i + 1: f"AI{i + 1}_IN" for i in range(10)}, footprint=fp_ok(tb(10)), mirror="y")
     sh.text(225, 105, "Nguon cap cho cam bien 2 day (24V loop) + chan chung GND", 1.5)
-    sh.place("Device:Polyfuse", "F711", "200mA", 250, 125, 90, {1: "+24V", 2: "V24_LOOP"},
-             footprint=fp_ok(PTC1206))
+    sh.place("Device:Polyfuse", "F711", "MF-MSMF050-2 0.5A/60V", 250, 125, 90, {1: "+24V", 2: "V24_LOOP"},
+             footprint=fp_ok("Fuse:Fuse_1812_4532Metric"))
     sh.place("Connector:Screw_Terminal_01x06", "J703", "AI PWR/COM", 250, 150, 0,
              {1: "V24_LOOP", 2: "V24_LOOP", 3: "V24_LOOP", 4: "GND", 5: "GND", 6: "GND"},
              footprint=fp_ok(tb(6)), mirror="y")
@@ -414,6 +411,8 @@ def main():
     root = Sheet("Root", "PLC_STM32_Modbus.kicad_sch", "PLC STM32F407 Modbus TCP - 16DO / 10AI")
     root.text(30, 25, "PLC STM32F407VET6 + W5500 : Modbus TCP (LAN), nap code qua USB-C (CH340C)", 2.5)
     sheets = [sheet_power(), sheet_mcu(), sheet_usb(), sheet_comm(), sheet_outputs(), sheet_analog()]
+    import notes
+    notes.add_all(root, sheets)                 # ghi chu giai thich tren tung trang
     gl, singles = kisch.write_project(OUT, root, sheets)
     pro = os.path.join(OUT, "PLC_STM32_Modbus.kicad_pro")
     if not os.path.exists(pro):

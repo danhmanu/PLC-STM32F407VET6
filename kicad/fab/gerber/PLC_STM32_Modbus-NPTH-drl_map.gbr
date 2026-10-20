@@ -1,12 +1,12 @@
 %TF.GenerationSoftware,KiCad,Pcbnew,10.0.6*%
-%TF.CreationDate,2026-10-16T11:57:34+07:00*%
+%TF.CreationDate,2026-10-20T13:52:43+07:00*%
 %TF.ProjectId,PLC_STM32_Modbus,504c435f-5354-44d3-9332-5f4d6f646275,rev?*%
 %TF.SameCoordinates,Original*%
 %TF.FileFunction,Drillmap*%
 %TF.FilePolarity,Positive*%
 %FSLAX45Y45*%
 G04 Gerber Fmt 4.5, Leading zero omitted, Abs format (unit mm)*
-G04 Created by KiCad (PCBNEW 10.0.6) date 2026-10-16 11:57:34*
+G04 Created by KiCad (PCBNEW 10.0.6) date 2026-10-20 13:52:43*
 %MOMM*%
 %LPD*%
 G01*

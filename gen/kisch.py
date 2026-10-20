@@ -50,7 +50,7 @@ def dump(node, ind=0):
             return str(node)
         if isinstance(node, (int, float)):
             return fmt_num(node)
-        return '"' + str(node).replace("\\", "\\\\").replace('"', '\\"') + '"'
+        return '"' + str(node).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
     simple = all(not isinstance(x, list) for x in node)
     if simple:
         return "(" + " ".join(dump(x) for x in node) + ")"
@@ -230,6 +230,7 @@ class Sheet:
         self.route = True        # tu di day net cuc bo
         self.routed_nets = []
         self.label_nets = []
+        self.ref_box = {}        # ref -> (x0, y0, x1, y1) than linh kien
 
     # -- helpers
     def _use(self, ls):
@@ -260,6 +261,107 @@ class Sheet:
         self.items.append(S("text", s, S("exclude_from_sim", Sym("no")), S("at", x, y, 0),
                             S("effects", S("font", S("size", size, size)), S("justify", Sym("left"), Sym("bottom"))),
                             S("uuid", uid())))
+
+    def note(self, x, y, title, lines, size=1.4, width=None, color=(0, 0, 132)):
+        """Khoi ghi chu nhieu dong (font Arial de hien dau tieng Viet); (x, y) la goc tren-trai.
+        Tra ve toa do y ngay duoi khoi."""
+        lh = size * 1.62                      # khoang cach dong
+        tsz = size * 1.25
+        body = "\n".join(lines)
+        w = width or max([len(title) * tsz * 0.62] + [len(ln) * size * 0.56 for ln in lines])
+        h = tsz * 1.7 + len(lines) * lh
+        self.textboxes.append((x - 1, y - 1, x + w + 1, y + h + 1))
+
+        def eff(sz, bold=False):
+            f = S("font", S("face", "Arial"), S("size", sz, sz))
+            if bold:
+                f.append(S("bold", Sym("yes")))
+            f.append(S("color", color[0], color[1], color[2], 1))
+            return S("effects", f, S("justify", Sym("left"), Sym("top")))
+
+        self.items.append(S("text", title, S("exclude_from_sim", Sym("no")), S("at", round(x, 3), round(y, 3), 0),
+                            eff(tsz, True), S("uuid", uid())))
+        self.items.append(S("text", body, S("exclude_from_sim", Sym("no")),
+                            S("at", round(x, 3), round(y + tsz * 1.7, 3), 0), eff(size), S("uuid", uid())))
+        return y + h + 3
+
+    # ---- ghi chu dat canh linh kien -------------------------------------------------
+    def _obstacles(self):
+        obs = []
+        for (x0, y0, x1, y1) in self.bodies:
+            w_, h_ = x1 - x0, y1 - y0
+            if w_ < 10 and h_ < 14 and h_ >= w_:                      # linh kien nho dung: chu ben phai
+                obs.append((x0 - 2.5, y0 - 2.5, x1 + 13, y1 + 2.5))
+            elif w_ < 14 and h_ < 10:                                 # linh kien nho nam ngang: chu tren/duoi
+                obs.append((x0 - 2.5, y0 - 4.5, x1 + 2.5, y1 + 4.5))
+            else:
+                obs.append((x0 - 2.5, y0 - 3.5, x1 + 2.5, y1 + 3.5))
+        obs += [(a - 1, b - 1, c + 1, d + 1) for (a, b, c, d) in self.textboxes]
+        for (x1, y1, x2, y2) in self.wsegs:
+            obs.append((min(x1, x2) - 1.3, min(y1, y2) - 1.3, max(x1, x2) + 1.3, max(y1, y2) + 1.3))
+        for (net, x, y, ang) in self.nets_used:
+            ln = len(net) * 1.0 + 4
+            dx, dy = {0: (1, 0), 90: (0, -1), 180: (-1, 0), 270: (0, 1)}[ang]
+            obs.append((min(x, x + dx * ln) - 2, min(y, y + dy * ln) - 2, max(x, x + dx * ln) + 2,
+                        max(y, y + dy * ln) + 2))
+        for pd in self.pending:                                       # cho de day/nhan di ra tu chan
+            ln = 4 + len(pd["net"]) * 1.0
+            ox, oy = pd["out"]
+            x, y = pd["x"], pd["y"]
+            obs.append((min(x, x + ox * ln) - 2.2, min(y, y + oy * ln) - 2.2,
+                        max(x, x + ox * ln) + 2.2, max(y, y + oy * ln) + 2.2))
+        return obs
+
+    def note_near(self, refs, title, lines, size=1.1, width=55, color=(0, 0, 132)):
+        """Dat khoi ghi chu sat cum linh kien `refs`, tranh than/day/nhan/ghi chu khac."""
+        bx = [self.ref_box[r] for r in refs if r in self.ref_box]
+        if not bx:
+            raise KeyError(f"note_near: khong tim thay {refs}")
+        ax0, ay0 = min(b[0] for b in bx), min(b[1] for b in bx)
+        ax1, ay1 = max(b[2] for b in bx), max(b[3] for b in bx)
+        lh = size * 1.62
+        tsz = size * 1.25
+        nl = len(lines) + (1 if title else 0)
+        w = width
+        h = (tsz * 1.7 if title else 0) + len(lines) * lh
+        W = {"A3": 420, "A2": 594, "A4": 297}[self.paper]
+        Hh = {"A3": 297, "A2": 420, "A4": 210}[self.paper]
+        obs = self._obstacles()
+
+        def free(x, y):
+            if x < 12 or y < 12 or x + w > W - 12 or y + h > Hh - 40 and x + w > W - 190:
+                return False
+            if y + h > Hh - 12:
+                return False
+            for (a, b, c, d) in obs:
+                if x < c and a < x + w and y < d and b < y + h:
+                    return False
+            return True
+
+        cands = []
+        for dist in (2.5, 5, 8, 12, 17, 23, 30, 40, 52, 65, 80, 95):
+            cx = (ax0 + ax1) / 2
+            cy = (ay0 + ay1) / 2
+            cands += [(ax0, ay1 + dist), (cx - w / 2, ay1 + dist), (ax1 + dist, ay0), (ax1 + dist, cy - h / 2),
+                      (ax0, ay0 - dist - h), (cx - w / 2, ay0 - dist - h), (ax0 - dist - w, ay0),
+                      (ax0 - dist - w, cy - h / 2), (ax1 - w, ay1 + dist), (ax1 + dist, ay1 - h)]
+        for (x, y) in cands:
+            x, y = round(x, 2), round(y, 2)
+            if free(x, y):
+                if title:
+                    return self.note(x, y, title, lines, size=size, width=w, color=color)
+                return self._note_body(x, y, lines, size, w, color)
+        return None
+
+    def _note_body(self, x, y, lines, size, w, color):
+        lh = size * 1.62
+        h = len(lines) * lh
+        self.textboxes.append((x - 1, y - 1, x + w + 1, y + h + 1))
+        f = S("font", S("face", "Arial"), S("size", size, size), S("color", color[0], color[1], color[2], 1))
+        self.items.append(S("text", "\n".join(lines), S("exclude_from_sim", Sym("no")),
+                            S("at", round(x, 3), round(y, 3), 0),
+                            S("effects", f, S("justify", Sym("left"), Sym("top"))), S("uuid", uid())))
+        return y + h + 2
 
     def no_connect(self, x, y):
         self.items.append(S("no_connect", S("at", x, y), S("uuid", uid())))
@@ -361,6 +463,7 @@ class Sheet:
                     gy.append(y + by)
         if gx and not ls.power:
             self.bodies.append((min(gx), min(gy), max(gx), max(gy)))
+            self.ref_box[ref] = (min(gx), min(gy), max(gx), max(gy))
         for num, lst in ls.pins.items():
             for d in lst:
                 if d["unit"] in (0, unit):
