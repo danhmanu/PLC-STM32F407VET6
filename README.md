@@ -1,6 +1,6 @@
 # PLC STM32F407VET6 – Modbus TCP – 16 DO transistor – 10 AI
 
-Mạch nguyên lý KiCad 10 cho bộ PLC: điều khiển qua LAN bằng **Modbus TCP** (W5500), nạp code qua **USB‑C (CH340C)**, 16 ngõ ra transistor cách ly quang, 10 ngõ vào analog **4–20mA**.
+Mạch nguyên lý KiCad 10 cho bộ PLC: điều khiển qua LAN bằng **Modbus TCP** (module W5500 Lite), nạp code qua **USB‑C (CH340C)**, 16 ngõ ra transistor cách ly quang, 10 ngõ vào analog **4–20mA**.
 
 ## Cấu trúc thư mục
 
@@ -25,7 +25,7 @@ Mạch nguyên lý KiCad 10 cho bộ PLC: điều khiển qua LAN bằng **Modbu
 | **Nguồn 24VDC** | PTC MF‑MSMF050 (0.5A/60V) → diode chống ngược SS110 → TVS SMBJ33CA → cuộn lọc common‑mode TDK ACM7060 → ferrite 3A + 47µF/10µF → **+24V**. Buck **LMR16006Y** (vào tới 60V) → 5V. Diode OR với VBUS của USB → **AMS1117‑3.3** → +3V3. Ferrite tách riêng **+3.3VA** cho ADC |
 | **MCU** | STM32F407VET6, thạch anh 8MHz, **REF3030 (3.000V) làm VREF+**, nút RESET/BOOT, cổng SWD 10 chân, LED RUN/ERR |
 | **USB nạp code** | USB‑C, USBLC6 chống tĩnh điện, polyfuse 500mA, **CH340C → USART1** (cổng bootloader của STM32), mạch tự vào bootloader bằng DTR/RTS (2×MMBT3904 + MMBT3906), jumper AUTO‑BOOT |
-| **Ethernet** | W5500 + RJ45 HR911105A (có sẵn biến áp), thạch anh 25MHz – Modbus TCP |
+| **Ethernet** | **Module W5500 Lite** (J401, có sẵn W5500 + thạch anh + biến áp + RJ45), cắm qua 2 hàng socket 1×6. Trên board chỉ còn tụ 10µF + 100nF cho 3V3 module và 2 trở kéo lên 10k cho INT/RST – Modbus TCP |
 | **16 ngõ ra transistor** | Mỗi kênh: opto **PC817 (SMD‑4, cách ly 5000 Vrms)** → **MOSFET DMN6075S (60V/2.5A)**, diode dập SS16, LED báo phía tải. Kiểu ngõ ra **sink (NPN)**: tải đấu giữa V+ và Yn |
 | **10 ngõ vào analog (chỉ 4–20mA)** | Mỗi kênh: TVS SMF5.0CA, **shunt 120Ω 0.1% 25ppm**, lọc RC 4.7k/100nF vào ADC (không có cầu chì từng kênh). Cầu đấu J703 cấp nguồn 24V nuôi cảm biến 2 dây, qua PTC F711 **0.5A/60V (MF‑MSMF050‑2, gói 1812)** |
 
@@ -66,7 +66,7 @@ Mạch nguyên lý KiCad 10 cho bộ PLC: điều khiển qua LAN bằng **Modbu
 |---|---|
 | DO1…DO16 | PE1, PE0, PB9, PB8, PB7, PB6, PB5, PB4, PD7, PD6, PD5, PD4, PD3, PD2, PD1, PD0 (các chân ở cạnh trên của LQFP, hướng về khối ngõ ra để dễ đi dây) |
 | AI1…AI10 | PA0, PA1, PA2, PA3, PC0, PC1, PC2, PC3, PC4, PC5 (ADC1, 12‑bit) |
-| W5500 (SPI2, tối đa 21MHz) | PB12 = CS, PB13 = SCK, PB14 = MISO, PB15 = MOSI, PD8 = RST, PD9 = INT |
+| Module W5500 Lite (SPI2, tối đa 21MHz) | PB12 = CS, PB13 = SCK, PB14 = MISO, PB15 = MOSI, PD8 = RST, PD9 = INT |
 | USB/CH340C (USART1) | PA9 = TX, PA10 = RX |
 | SWD | PA13 = SWDIO, PA14 = SWCLK, PB3 = SWO |
 | LED | PD12 = RUN, PD13 = ERR |
@@ -121,9 +121,16 @@ Mạch nguyên lý KiCad 10 cho bộ PLC: điều khiển qua LAN bằng **Modbu
 **Bố trí** (nhìn từ mặt trên):
 - **Cạnh trên – phía tải (cách ly):** cầu đấu ngõ ra J501/J502, bước 3.81mm. Từ trái sang phải: Y1…Y8, V+, COM | Y9…Y16, V+, COM. Ở giữa hai cầu đấu là TVS + tụ lọc nguồn relay.
 - **Cạnh dưới:** J701 (AI1…AI10, 4–20mA), J703 (24V loop ×3, GND ×3), J101 (24VDC IN: +, −).
-- **Cạnh trái:** USB‑C nạp code. **Cạnh phải:** RJ45.
-- **Bên trong:** MCU ở giữa, W5500 bên phải, khối nguồn ở góc dưới phải, analog ở góc dưới trái. 4 lỗ bắt vít M3 ở 4 góc.
+- **Cạnh trái:** USB‑C nạp code. **Cạnh phải:** module W5500 Lite, cổng LAN chĩa ra ngoài mép board (nhô ~2.5mm).
+- **Bên trong:** MCU ở giữa, module Ethernet bên phải, khối nguồn ở góc dưới phải (dịch xuống 1.2mm để nhường chỗ cho module), analog ở góc dưới trái. 4 lỗ bắt vít M3 ở 4 góc.
 - **Mặt dưới** chỉ có tụ/trở nhỏ (tụ lọc ngay dưới chân nguồn IC, cầu chia analog, cổng SWD) → cần **lắp ráp SMT 2 mặt**.
+
+### Lắp module W5500 Lite
+
+- Hàn lên board **2 hàng socket cái 1×6 (bước 2.54mm), cách nhau 20.32mm**. Module hàn header đực **chân hướng xuống** rồi cắm vào socket.
+- Hướng cắm: **cổng LAN hướng ra mép phải** của board, chân vuông (pin 1 = GND) theo silkscreen.
+- Dưới thân module (mặt dưới board) có C401 10µF, C402 100nF (lọc 3V3) và R401/R402 10k (kéo lên INT/RST).
+- Nối dây module ↔ STM32: MOSI→PB15, SCLK→PB13, CS→PB12, MISO→PB14, INT→PD9, RST→PD8, 3V3, GND. Chân NC để trống.
 
 ### Cách ly ngõ ra – dùng với relay ngoài có nguồn riêng
 
@@ -155,13 +162,13 @@ Mạch nguyên lý KiCad 10 cho bộ PLC: điều khiển qua LAN bằng **Modbu
 
 ### Trạng thái đi dây – CẦN HOÀN THIỆN TRƯỚC KHI ĐẶT MẠCH
 
-- Freerouting + script đi được **565/594 kết nối (~95.1%)**. **Còn 29 kết nối** cần nối tay; danh sách kèm tọa độ ở `kicad/unrouted.txt`:
-  - +3V3 (13) và GND (3) quanh chân nguồn STM32/W5500.
-  - Tín hiệu: UART1_RX/TX, NRST, DO1, LED_RUN, AI5/6/8_ADC, AI5_IN.
-  - USB: VBUS_C (2), CC1. Nguồn: +24V (1).
+- Freerouting + script đã đi phần lớn dây. **Còn 26 kết nối** cần nối tay; danh sách ở `kicad/unrouted.txt`:
+  - +3V3 (7) và GND (2) quanh chân nguồn STM32.
+  - Tín hiệu: ETH_MOSI, ETH_MISO (MCU → module), UART1_RX/TX, NRST, DO1, LED_RUN, AI5/6/8_ADC.
+  - USB: VBUS_C (2), CC1, VBUS. Nguồn: +24V, VIN_RAW, BUCK_CB.
 - **DRC hiện tại:**
   - 0 lỗi điện (chập, khoảng cách, lỗ khoan). Không lệch so với sơ đồ nguyên lý.
-  - Còn vài cảnh báo "via hở", là via fan‑out +3V3 dưới STM32/W5500, thuộc chính các kết nối +3V3 chưa nối.
+  - Còn vài cảnh báo "via hở", là via fan‑out +3V3 dưới STM32, thuộc chính các kết nối +3V3 chưa nối.
   - Còn cảnh báo silkscreen (chữ chồng nhau).
 - **Cách hoàn thiện:** mở `PLC_STM32_Modbus.kicad_pcb`, dùng Interactive Router (phím **X**) nối từng đường theo ratsnest. Sau đó chạy DRC cho đến khi **Unconnected = 0**.
 - ⚠️ **Không gửi Gerber đi sản xuất khi DRC còn báo "unconnected".** Sau khi nối xong, chạy `sh gen/fab.sh` hoặc xuất Gerber trực tiếp trong KiCad.
@@ -171,6 +178,11 @@ Mạch nguyên lý KiCad 10 cho bộ PLC: điều khiển qua LAN bằng **Modbu
 ```bash
 "/c/Program Files/KiCad/10.0/bin/python.exe" gen/pcb.py                     # đặt linh kiện + fan-out + rãnh cách ly
 "/c/Program Files/KiCad/10.0/bin/python.exe" gen/finish.py gen/routing/pc817c.ses gen/routing/pc817d.ses   # nạp đường đi dây, đổ đồng, via khâu
+"/c/Program Files/KiCad/10.0/bin/python.exe" gen/make_lib.py                # tạo thư viện riêng PLC (ký hiệu + footprint W5500 Lite)
+"/c/Program Files/KiCad/10.0/bin/python.exe" gen/sync_pcb.py                # đồng bộ PCB theo netlist (thêm/bớt/đổi footprint)
+"/c/Program Files/KiCad/10.0/bin/python.exe" gen/place_module.py kicad/PLC_STM32_Modbus.kicad_pcb   # đặt module ở mép phải
+"/c/Program Files/KiCad/10.0/bin/python.exe" gen/merge_ses.py kicad/PLC_STM32_Modbus.kicad_pcb file.ses   # gộp dây đi bổ sung
+"/c/Program Files/KiCad/10.0/bin/python.exe" gen/safe_clean.py              # xóa dây/via hở, tự hoàn tác nếu làm mất kết nối
 "/c/Program Files/KiCad/10.0/bin/kicad-cli.exe" pcb drc --format json -o kicad/drc.json kicad/PLC_STM32_Modbus.kicad_pcb
 "/c/Program Files/KiCad/10.0/bin/python.exe" gen/cleanup.py                 # xóa đoạn chập / chỉnh dây vi phạm khoảng cách (nếu có)
 sh gen/fab.sh                                                                # Gerber, khoan, pos, PDF, ảnh 3D
@@ -185,10 +197,7 @@ sh gen/fab.sh                                                                # G
 
 ## Việc cần kiểm tra / làm tiếp trước khi làm PCB
 
-1. **Phần PHY của W5500**: so sánh với `w5500_sch_v110_use_mag.pdf` của WIZnet. Mạch hiện tại:
-   - TX: 49.9Ω kéo lên 3V3, TCT nối 3V3.
-   - RX: 49.9Ω về điểm giữa, tụ 6.8nF xuống GND; RCT qua 10nF xuống GND.
-   - Datasheet W5500 xác nhận các giá trị: EXRES1 = 12.4k 1%, TOCAP = 4.7µF, 1V2O = 10nF, chân 23 nối GND.
+1. **Module W5500 Lite (J401)**: footprint tự vẽ `PLC:W5500_Lite_Module` theo bản vẽ 23×25mm (2 hàng 1×6, bước 2.54mm, hai hàng cách nhau 20.32mm). **In footprint tỉ lệ 1:1 và đặt module thật lên để đối chiếu** trước khi đặt mạch. Module cấp nguồn 3.3V (W5500 + PHY ≈ 130–150mA).
 2. **Cuộn lọc common‑mode**: TDK ACM7060‑701‑2PL. Kiểm tra lại dòng định mức và thứ tự chân 1‑2 / 3‑4 khớp footprint.
 3. **Cuộn cảm buck**: 10µH cho LMR16006Y (2.1MHz). Đối chiếu lại bảng chọn L/C trong datasheet TI.
 4. Footprint của các linh kiện dùng ký hiệu chung (R, C, LED, polyfuse…) đã gán sẵn (0603/0805/1206). Shunt 120Ω tiêu tán 48mW ở 20mA (đã chọn 1206 0.1% 25ppm để ổn định nhiệt).

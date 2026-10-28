@@ -801,27 +801,27 @@
       "PLC_STM32_Modbus"
     ],
     [
-      "a784ae94-d37f-4796-9282-a027cea8ecae",
+      "f3a7e9f4-7c84-454b-b44e-535cd5018950",
       "Nguon 24VDC"
     ],
     [
-      "bc60d3e2-d21c-405f-88d9-d0d594cc740a",
+      "6e42ed1c-9473-48f6-85df-66e09bc6ff15",
       "16 ngo ra transistor"
     ],
     [
-      "8049447a-38bb-4a7f-a882-4045c407e9fe",
+      "32e57938-8cec-4369-8206-8d5c8ef3065e",
       "MCU STM32F407VET6"
     ],
     [
-      "d3f267e6-5dde-4d94-a4c9-f9c8f638a844",
+      "b3419e11-0b39-4a8c-ad78-72e873a25840",
       "10 ngo vao analog"
     ],
     [
-      "d19a194c-fb5a-4781-ad49-2dd4d4a0d941",
+      "d6ae62fb-2540-48db-9968-68e84ef24fc1",
       "USB nap code"
     ],
     [
-      "a3cf3655-676c-4093-bba4-0b155864c88c",
+      "5bab3073-e547-497e-8c6e-44a83d621d1b",
       "Ethernet"
     ]
   ],

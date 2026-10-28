@@ -2,7 +2,7 @@
 	(version 20260306)
 	(generator "eeschema")
 	(generator_version "10.0")
-	(uuid "37f83b27-af1f-47e2-955d-ae7b100230f9")
+	(uuid "1efb705c-c278-419f-84d4-73f1e1d17039")
 	(paper "A3")
 	(title_block
 		(title "PLC STM32F407 Modbus TCP - 16DO / 10AI")
@@ -21,7 +21,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "7aa8d82a-7fe9-4c9f-a24f-b9df76537470")
+		(uuid "4ccdf75a-dedc-4dc5-b7ba-4b87bcf915c4")
 	)
 	(text "TỔNG QUAN HỆ THỐNG – PLC STM32F407 + W5500 (Modbus TCP)"
 		(exclude_from_sim no)
@@ -35,9 +35,9 @@
 			)
 			(justify left top)
 		)
-		(uuid "87ccea0b-b988-4206-b2a8-e15f3f12c2ed")
+		(uuid "7a52183d-a599-4b3b-99d0-fc79048d827a")
 	)
-	(text "• Nguồn 24VDC → bảo vệ (PTC, chống ngược, TVS) + lọc nhiễu → buck 5V → LDO 3.3V; +3.3VA riêng cho ADC.\n• MCU STM32F407VET6 (168MHz): 16 ngõ ra DO1–DO16, 10 ngõ vào 4–20mA (ADC 12-bit, VREF 3.000V), SPI2 → W5500.\n• Ethernet W5500 + RJ45: Modbus TCP cổng 502, tối đa 8 kết nối. Coil 00001–00016 = DO1–DO16; Input Register 30001–30010 = AI1–AI10.\n• USB-C + CH340C: nạp chương trình qua bootloader UART (tự vào boot bằng DTR/RTS), cổng debug.\n• 16 ngõ ra: opto PC817 (cách ly 5kV) + MOSFET 60V/2.5A, kiểu sink, nguồn tải V+/COM riêng 12–30V.\n• 10 ngõ vào 4–20mA: TVS + shunt 120Ω + lọc RC; J703 cấp 24V (PTC 0.5A) nuôi cảm biến 2 dây.\n• Ghi chú chi tiết (tác dụng, cách tính giá trị) đặt ngay cạnh từng linh kiện ở các trang con."
+	(text "• Nguồn 24VDC → bảo vệ (PTC, chống ngược, TVS) + lọc nhiễu → buck 5V → LDO 3.3V; +3.3VA riêng cho ADC.\n• MCU STM32F407VET6 (168MHz): 16 ngõ ra DO1–DO16, 10 ngõ vào 4–20mA (ADC 12-bit, VREF 3.000V), SPI2 → W5500.\n• Ethernet: module W5500 Lite (có sẵn RJ45): Modbus TCP cổng 502, tối đa 8 kết nối. Coil 00001–00016 = DO1–DO16; Input Register 30001–30010 = AI1–AI10.\n• USB-C + CH340C: nạp chương trình qua bootloader UART (tự vào boot bằng DTR/RTS), cổng debug.\n• 16 ngõ ra: opto PC817 (cách ly 5kV) + MOSFET 60V/2.5A, kiểu sink, nguồn tải V+/COM riêng 12–30V.\n• 10 ngõ vào 4–20mA: TVS + shunt 120Ω + lọc RC; J703 cấp 24V (PTC 0.5A) nuôi cảm biến 2 dây.\n• Ghi chú chi tiết (tác dụng, cách tính giá trị) đặt ngay cạnh từng linh kiện ở các trang con."
 		(exclude_from_sim no)
 		(at 30 128.4 0)
 		(effects
@@ -48,7 +48,7 @@
 			)
 			(justify left top)
 		)
-		(uuid "abac929c-2217-4831-9457-383cedc2798f")
+		(uuid "a9b656b4-49d3-4459-a79a-989de3b6134e")
 	)
 	(sheet
 		(at 105 40)
@@ -64,7 +64,7 @@
 		(fill
 			(color 0 0 0 0)
 		)
-		(uuid "8049447a-38bb-4a7f-a882-4045c407e9fe")
+		(uuid "32e57938-8cec-4369-8206-8d5c8ef3065e")
 		(property "Sheetname" "MCU STM32F407VET6"
 			(at 105 39.2 0)
 			(show_name no)
@@ -109,7 +109,7 @@
 		(fill
 			(color 0 0 0 0)
 		)
-		(uuid "a3cf3655-676c-4093-bba4-0b155864c88c")
+		(uuid "5bab3073-e547-497e-8c6e-44a83d621d1b")
 		(property "Sheetname" "Ethernet"
 			(at 255 39.2 0)
 			(show_name no)
@@ -141,51 +141,6 @@
 		)
 	)
 	(sheet
-		(at 30 40)
-		(size 60 25)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(stroke
-			(width 0.1524)
-			(type solid)
-		)
-		(fill
-			(color 0 0 0 0)
-		)
-		(uuid "a784ae94-d37f-4796-9282-a027cea8ecae")
-		(property "Sheetname" "Nguon 24VDC"
-			(at 30 39.2 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.524 1.524)
-				)
-				(justify left bottom)
-			)
-		)
-		(property "Sheetfile" "power.kicad_sch"
-			(at 30 65.6 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left top)
-			)
-		)
-		(instances
-			(project "PLC_STM32_Modbus"
-				(path "/2be3e191-9af5-421c-aa34-3e3c37fa6c43"
-					(page "2")
-				)
-			)
-		)
-	)
-	(sheet
 		(at 30 85)
 		(size 60 25)
 		(exclude_from_sim no)
@@ -199,7 +154,7 @@
 		(fill
 			(color 0 0 0 0)
 		)
-		(uuid "bc60d3e2-d21c-405f-88d9-d0d594cc740a")
+		(uuid "6e42ed1c-9473-48f6-85df-66e09bc6ff15")
 		(property "Sheetname" "16 ngo ra transistor"
 			(at 30 84.2 0)
 			(show_name no)
@@ -231,6 +186,51 @@
 		)
 	)
 	(sheet
+		(at 105 85)
+		(size 60 25)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "b3419e11-0b39-4a8c-ad78-72e873a25840")
+		(property "Sheetname" "10 ngo vao analog"
+			(at 105 84.2 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "analog.kicad_sch"
+			(at 105 110.6 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "PLC_STM32_Modbus"
+				(path "/2be3e191-9af5-421c-aa34-3e3c37fa6c43"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
 		(at 180 40)
 		(size 60 25)
 		(exclude_from_sim no)
@@ -244,7 +244,7 @@
 		(fill
 			(color 0 0 0 0)
 		)
-		(uuid "d19a194c-fb5a-4781-ad49-2dd4d4a0d941")
+		(uuid "d6ae62fb-2540-48db-9968-68e84ef24fc1")
 		(property "Sheetname" "USB nap code"
 			(at 180 39.2 0)
 			(show_name no)
@@ -276,7 +276,7 @@
 		)
 	)
 	(sheet
-		(at 105 85)
+		(at 30 40)
 		(size 60 25)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -289,9 +289,9 @@
 		(fill
 			(color 0 0 0 0)
 		)
-		(uuid "d3f267e6-5dde-4d94-a4c9-f9c8f638a844")
-		(property "Sheetname" "10 ngo vao analog"
-			(at 105 84.2 0)
+		(uuid "f3a7e9f4-7c84-454b-b44e-535cd5018950")
+		(property "Sheetname" "Nguon 24VDC"
+			(at 30 39.2 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -301,8 +301,8 @@
 				(justify left bottom)
 			)
 		)
-		(property "Sheetfile" "analog.kicad_sch"
-			(at 105 110.6 0)
+		(property "Sheetfile" "power.kicad_sch"
+			(at 30 65.6 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -315,7 +315,7 @@
 		(instances
 			(project "PLC_STM32_Modbus"
 				(path "/2be3e191-9af5-421c-aa34-3e3c37fa6c43"
-					(page "5")
+					(page "2")
 				)
 			)
 		)

@@ -36,7 +36,7 @@ def root(sh):
         "• Nguồn 24VDC → bảo vệ (PTC, chống ngược, TVS) + lọc nhiễu → buck 5V → LDO 3.3V; +3.3VA riêng cho ADC.",
         "• MCU STM32F407VET6 (168MHz): 16 ngõ ra DO1–DO16, 10 ngõ vào 4–20mA (ADC 12-bit, VREF 3.000V), "
         "SPI2 → W5500.",
-        "• Ethernet W5500 + RJ45: Modbus TCP cổng 502, tối đa 8 kết nối. Coil 00001–00016 = DO1–DO16; "
+        "• Ethernet: module W5500 Lite (có sẵn RJ45): Modbus TCP cổng 502, tối đa 8 kết nối. Coil 00001–00016 = DO1–DO16; "
         "Input Register 30001–30010 = AI1–AI10.",
         "• USB-C + CH340C: nạp chương trình qua bootloader UART (tự vào boot bằng DTR/RTS), cổng debug.",
         "• 16 ngõ ra: opto PC817 (cách ly 5kV) + MOSFET 60V/2.5A, kiểu sink, nguồn tải V+/COM riêng 12–30V.",
@@ -131,24 +131,17 @@ def usb(sh):
 
 # ----------------------------------------------------------------------------- COMM
 def comm(sh):
-    blk(sh, ["U400"], "W5500 – ETHERNET 10/100 + TCP/IP PHẦN CỨNG",
-        ["8 socket = tối đa 8 kết nối Modbus TCP đồng thời. Giao tiếp MCU qua SPI2 (≤ 21MHz)."], width=85)
-    near(sh, ["R401"], ["R401 12.4kΩ 1% (EXRES1): tham chiếu dòng bias PHY – giá trị theo datasheet."])
-    near(sh, ["C401", "C402"], ["C401 4.7µF (TOCAP), C402 10nF (1V2O): bắt buộc theo datasheet."])
-    near(sh, ["Y401", "C403", "C404"], ["Y401 25MHz ±50ppm (chuẩn Ethernet). Tụ tải C = 2·(C_L − C_stray) = "
-                                        "2 × (11 − 2) ≈ 18pF."])
-    near(sh, ["R402", "R403"], ["R402, R403 10k kéo lên INT, RST (giữ mức 1 khi MCU chưa khởi động)."])
-    near(sh, ["C405", "C406", "C407", "C408", "C409", "C410"],
-         ["C405–C409 100nF: một tụ cho mỗi chân AVDD; C410 10µF dự trữ (W5500 hút ~130mA dạng xung khi phát)."],
-         width=80)
-    near(sh, ["R404", "R405", "C412"], ["TX: R404, R405 49.9Ω kéo lên 3.3V (tầng phát nguồn dòng). Cáp Cat5 "
-                                        "Z_vi sai = 100Ω = 2 × 49.9Ω. C412 10nF lọc nguồn."])
-    near(sh, ["R406", "R407", "C411"], ["RX: R406, R407 49.9Ω phối hợp 100Ω; C411 6.8nF nối điểm giữa xuống GND "
-                                        "(xoay chiều)."])
-    near(sh, ["J401", "C413", "C414"], ["RJ45 HR911105A có biến áp cách ly 1500Vrms. TCT → 3.3V (C414 lọc); "
-                                        "RCT → C413 10nF xuống GND."])
-    near(sh, ["R408", "R409"], ["LED RJ45 (W5500 kéo xuống để sáng): I = (3.3 − 2.0)/330Ω ≈ 4mA."])
-    near(sh, ["C415"], ["C415 100nF: lọc chân VDD (pin 28) W5500."])
+    blk(sh, ["J401"], "MODULE W5500 LITE – ETHERNET 10/100 + TCP/IP PHẦN CỨNG",
+        ["Trên module có sẵn: chip W5500, thạch anh 25MHz, điện trở phối hợp 49.9Ω, tụ TOCAP/1V2O và jack RJ45 "
+         "có biến áp cách ly – board chính chỉ cần cấp 3.3V và nối SPI.",
+         "8 socket phần cứng = tối đa 8 kết nối Modbus TCP đồng thời (cổng 502).",
+         "Giao tiếp MCU: SPI2 – PB12 = CS, PB13 = SCLK, PB14 = MISO, PB15 = MOSI (≤ 21MHz), PD8 = RST, PD9 = INT.",
+         "Lắp: 2 hàng socket cái 1×6 bước 2.54mm, cách nhau 20.32mm; RJ45 hướng ra mép board. Hàn header vào "
+         "module với chân hướng xuống (linh kiện và RJ45 ở mặt trên)."], width=110)
+    near(sh, ["C401", "C402"], ["C401 10µF + C402 100nF: lọc nguồn 3.3V cho module, đặt sát chân 3V3 của socket. "
+                                "W5500 hút ~130mA dạng xung khi phát → cần tụ dự trữ gần module."], width=60)
+    near(sh, ["R401", "R402"], ["R401, R402 10k kéo lên INT, RST: giữ mức 1 khi MCU chưa khởi động (module không "
+                                "reset ngẫu nhiên). INT tích cực mức thấp."], width=60)
 
 
 # ----------------------------------------------------------------------------- OUTPUTS

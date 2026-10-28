@@ -64,7 +64,10 @@ class Board:
 
     def add(self, ref, comp, nets):
         lib, name = comp["fp"].split(":", 1)
-        fp = pcbnew.FootprintLoad(os.path.join(FPDIR, lib + ".pretty"), name)
+        libdir = os.path.join(FPDIR, lib + ".pretty")
+        if lib == "PLC":                                   # thu vien rieng cua project
+            libdir = os.path.join(OUTDIR, "PLC.pretty")
+        fp = pcbnew.FootprintLoad(libdir, name)
         fp.SetFPID(pcbnew.LIB_ID(lib, name))
         fp.SetReference(ref)
         fp.SetValue(comp["value"])
@@ -462,14 +465,13 @@ def layout(B, comps):
     done(["D533", "C501", "C502"])
 
     # ---- dau noi mep board
-    B.put_bbox("J401", 90, right=W + 0.6, top=39.0)             # RJ45 mo ra phai
+    B.put_bbox("J401", 270, right=W + 0.25, top=37.6)           # module W5500 Lite, RJ45 mo ra phai
     B.put_bbox("J301", 270, left=-0.6, top=41.0)                # USB-C mo ra trai
     done(["J401", "J301"])
 
-    # ---- MCU & W5500
+    # ---- MCU
     B.put("U200", 44.0, 53.0, 0)
-    B.put("U400", 80.0, 50.0, 180)          # phia PHY huong ve RJ45
-    done(["U200", "U400"])
+    done(["U200"])
 
     # thach anh MCU sat chan PH0/PH1 (canh trai)
     B.put_bbox("Y201", 90, right=B.bbox("U200")[0] - 0.3, top=49.0)
@@ -487,17 +489,14 @@ def layout(B, comps):
     fails += B.pack(usb_bot, B.bbox("J301")[2] + 0.6, 38.2, 33.0, 60.0, bottom=True, sort=True)
     done(usb_bot)
 
-    # nut nhan + LED trang thai: giua MCU va W5500, phia tren
+    # nut nhan + LED trang thai: giua MCU va module Ethernet, phia tren
     ui = ["SW201", "SW202", "U201", "FB102", "R201", "R202", "D201", "R203", "D202", "R204"]
-    fails += B.pack(ui, B.bbox("U200")[2] + 0.5, 38.2, B.bbox("U400")[0] - 0.5, 45.5, sort=True)
+    fails += B.pack(ui, B.bbox("U200")[2] + 0.5, 38.2, B.bbox("J401")[0] - 0.5, 45.5, sort=True)
     done(ui)
 
-    # W5500 group (giua U400 va RJ45)
-    rj_left = B.bbox("J401")[0] - 0.3
-    eth_top = ["Y401", "C403", "C404", "R401", "R402", "R403", "R404", "R405", "R406", "R407",
-               "C411", "C413", "R408", "R409"]
-    fails += B.pack(eth_top, B.bbox("U400")[2] + 0.4, 38.2, rj_left, 58.0)
-    done(eth_top)
+    # tu/tro cua module (mat duoi, ben trong khung module) - vi tri chinh xac do gen/place_module.py dat
+    fails += B.pack(["C401", "C402", "R401", "R402"], B.bbox("J401")[0] + 3.0, 40.0, W - 4.0, 58.0, bottom=True)
+    done(["C401", "C402", "R401", "R402"])
 
     # analog: PTC + TVS thang hang ngay tren chan cau dau J701 cua tung kenh
     for k in range(10):
@@ -517,16 +516,15 @@ def layout(B, comps):
     pw_top = ["L101", "F101", "D101", "D102", "C101", "C102", "FB101", "C103", "C105", "U101", "D104",
               "C108", "D105", "D106", "U102", "L102", "D103", "D107"]
     pw_top = [r for r in pw_top if r in refs and r not in placed]
-    fails += B.pack(pw_top, 75.5, 60.0, W - 0.6, 81.2, sort=True)
+    fails += B.pack(pw_top, 75.5, 61.2, W - 0.6, 82.4, sort=True)   # khoi nguon lui xuong 1.2mm nhuong cho module
     done(pw_top)
     pw_bot = [r for r in ["C104", "C106", "C107", "C112", "C114", "R101", "R102", "C110", "C111", "C113", "C109"]
               if r in refs]
-    fails += B.pack(pw_bot, 76.0, 60.5, W - 1.0, 81.0, bottom=True)
+    fails += B.pack(pw_bot, 76.0, 61.7, W - 1.0, 82.2, bottom=True)
     done(pw_bot)
 
     # fan-out nguon cho QFP (sau khi da dat linh kien mat tren), roi moi dat tu mat duoi
     print("fanout U200:", fanout(B, "U200", depth=5.7))
-    print("fanout U400:", fanout(B, "U400", depth=2.4))
     # tu loc duoi MCU (mat duoi), moi tu sat chan nguon cua no
     for cap, pin in [("C203", 11), ("C204", 19), ("C205", 28), ("C206", 50), ("C207", 75), ("C208", 100),
                      ("C210", 22), ("C211", 22), ("C214", 21), ("C215", 21), ("C212", 49), ("C213", 73),
@@ -534,13 +532,6 @@ def layout(B, comps):
         if not B.under("U200", cap, pin, inset=0.0):
             fails.append(cap)
         done([cap])
-    # tu loc duoi W5500
-    for cap, pin in [("C405", 4), ("C406", 8), ("C407", 11), ("C408", 15), ("C409", 17), ("C414", 21),
-                     ("C415", 28), ("C410", 28), ("C412", 2), ("C402", 22), ("C401", 20)]:
-        if not B.under("U400", cap, pin, inset=0.0):
-            fails.append(cap)
-        done([cap])
-
     left = sorted(refs - placed)
     return fails, left
 

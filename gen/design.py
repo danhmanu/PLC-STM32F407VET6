@@ -38,6 +38,8 @@ def fp_ok(fp):
     lib, name = fp.split(":", 1)
     if os.path.exists(os.path.join(FP_DIR, lib + ".pretty", name + ".kicad_mod")):
         return fp
+    if lib == "PLC" and os.path.exists(os.path.join(OUT, "PLC.pretty", name + ".kicad_mod")):
+        return fp
     _missing_fp.add(fp)
     return fp
 
@@ -270,48 +272,18 @@ def sheet_usb():
 
 # =================================================================== COMM
 def sheet_comm():
-    sh = Sheet("Ethernet", "comm.kicad_sch", "W5500 Ethernet - Modbus TCP")
-    X, Y = 140, 130
-    c = {28: "+3V3", 4: "+3V3", 8: "+3V3", 11: "+3V3", 15: "+3V3", 17: "+3V3", 21: "+3V3",
-         3: "GND", 9: "GND", 14: "GND", 16: "GND", 19: "GND", 48: "GND", 29: "GND", 23: "GND",
-         10: "ETH_EXRES", 18: "NC", 20: "ETH_TOCAP", 22: "ETH_1V2",
-         7: "NC", 12: "NC", 13: "NC", 46: "NC", 47: "NC", 38: "NC", 39: "NC", 40: "NC", 41: "NC", 42: "NC",
-         43: "NC", 44: "NC", 45: "NC", 24: "NC", 26: "NC",
-         25: "ETH_LINK_LED", 27: "ETH_ACT_LED", 30: "ETH_XI", 31: "ETH_XO",
-         32: "ETH_CS", 33: "ETH_SCK", 34: "ETH_MISO", 35: "ETH_MOSI", 36: "ETH_INT", 37: "ETH_RST",
-         1: "ETH_TXN", 2: "ETH_TXP", 5: "ETH_RXN", 6: "ETH_RXP"}
-    sh.place("Interface_Ethernet:W5500", "U400", "W5500", X, Y, 0, c, stub=5.08)
-    # support parts
-    R(sh, 400, "12.4k 1%", 170.18, 157.48, "ETH_EXRES", "GND")
-    C(sh, 400, "4.7uF", 180.34, 162.56, "ETH_TOCAP", "GND", fp=C0805)
-    C(sh, 400, "10nF", 190.5, 167.64, "ETH_1V2", "GND")
-    sh.place("Device:Crystal", ref("Y", 400), "25MHz 18pF", 109.22, 133.35, 90, {1: "ETH_XI", 2: "ETH_XO"},
-             footprint=fp_ok("Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm"))
-    C(sh, 400, "18pF", 99.06, 144.78, "ETH_XI", "GND")
-    C(sh, 400, "18pF", 88.9, 144.78, "ETH_XO", "GND")
-    R(sh, 400, "10k", 95.25, 104.14, "+3V3", "ETH_INT")
-    R(sh, 400, "10k", 102.87, 104.14, "+3V3", "ETH_RST")
-    sh.text(40, 245, "Tu loc W5500 (dat sat chan AVDD/VDD)", 1.5)
-    decap_row(sh, 400, 40, 260, "+3V3", ["100nF"] * 5 + ["10uF"])
-
-    # magnetics termination
-    sh.text(170, 78, "Phoi hop tro khang PHY (theo WIZnet ref. schematic - kiem tra lai)", 1.3)
-    R(sh, 400, "49.9 1%", 177.8, 92.71, "+3V3", "ETH_TXP")
-    R(sh, 400, "49.9 1%", 185.42, 92.71, "+3V3", "ETH_TXN")
-    R(sh, 400, "49.9 1%", 193.04, 128.27, "ETH_RXP", "ETH_RXMID")
-    R(sh, 400, "49.9 1%", 200.66, 128.27, "ETH_RXN", "ETH_RXMID")
-    C(sh, 400, "6.8nF", 208.28, 138.43, "ETH_RXMID", "GND")
-    C(sh, 400, "10nF", 195.58, 90.17, "+3V3", "GND")
-    sh.place("Connector:RJ45_Hanrun_HR911105A_Horizontal", ref("J", 400), "HR911105A", 248.92, 111.76, 0,
-             {1: "ETH_TXP", 2: "ETH_TXN", 3: "ETH_RXP", 6: "ETH_RXN", 4: "+3V3", 5: "ETH_RCT", 7: "NC",
-              8: "GND", "SH": "GND", 9: "ETH_LEDG_A", 10: "ETH_LINK_LED", 12: "ETH_LEDY_A", 11: "ETH_ACT_LED"})
-    C(sh, 400, "10nF", 218.44, 135.89, "ETH_RCT", "GND")
-    C(sh, 400, "100nF", 210.82, 90.17, "+3V3", "GND")
-    R(sh, 400, "330", 284.48, 120.65, "+3V3", "ETH_LEDG_A")
-    R(sh, 400, "330", 292.1, 102.87, "+3V3", "ETH_LEDY_A")
-
-    # them 1 tu 100nF cho chan VDD (pin 28) cua W5500 (giu ref C415 nhu tren PCB)
-    C(sh, 400, "100nF", 160.02, 182.88, "+3V3", "GND")
+    sh = Sheet("Ethernet", "comm.kicad_sch", "Ethernet - module W5500 Lite (Modbus TCP)")
+    sh.text(40, 40, "ETHERNET: module W5500 Lite (W5500 + RJ45 co bien ap) cam vao 2 hang socket 1x6", 2.0)
+    sh.place("PLC:W5500_Lite", "J401", "W5500 Lite module", 160.02, 120.65, 0,
+             {1: "GND", 2: "GND", 7: "GND", 8: "+3V3", 9: "+3V3", 10: "NC",
+              3: "ETH_MOSI", 4: "ETH_SCK", 5: "ETH_CS", 6: "ETH_INT", 11: "ETH_RST", 12: "ETH_MISO"},
+             footprint=fp_ok("PLC:W5500_Lite_Module"), stub=5.08)
+    # tu loc nguon 3.3V cho module (dat sat chan 3V3 cua socket)
+    C(sh, 400, "10uF", 200.66, 104.14, "+3V3", "GND", fp=C0805)
+    C(sh, 400, "100nF", 210.82, 104.14, "+3V3", "GND")
+    # tro keo len INT, RST (giu muc 1 khi MCU chua khoi dong)
+    R(sh, 400, "10k", 110.49, 99.06, "+3V3", "ETH_INT")
+    R(sh, 400, "10k", 120.65, 99.06, "+3V3", "ETH_RST")
     return sh
 
 

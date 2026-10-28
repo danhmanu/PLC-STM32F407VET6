@@ -54,7 +54,10 @@ def sync(path, paths, node_net):
         have = "%s:%s" % (fp.GetFPID().GetLibNickname(), fp.GetFPID().GetLibItemName())
         if want and want != have:
             lib, name = want.split(":", 1)
-            nf = pcbnew.FootprintLoad(os.path.join(FPDIR, lib + ".pretty"), name)
+            libdir = os.path.join(FPDIR, lib + ".pretty")
+            if lib == "PLC":
+                libdir = os.path.join(HERE, "..", "kicad", "PLC.pretty")
+            nf = pcbnew.FootprintLoad(libdir, name)
             nf.SetFPID(pcbnew.LIB_ID(lib, name))
             nf.SetReference(r)
             nf.SetValue(fp.GetValue())

@@ -97,6 +97,8 @@ _libcache = {}
 def _load_lib(lib):
     if lib not in _libcache:
         path = os.path.join(KICAD_SYM_DIR, lib + ".kicad_sym")
+        if lib == "PLC":                          # thu vien rieng cua project
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PLC.kicad_sym")
         tree = parse(open(path, encoding="utf8").read())
         _libcache[lib] = {x[1]: x for x in findall(tree, "symbol")}
     return _libcache[lib]

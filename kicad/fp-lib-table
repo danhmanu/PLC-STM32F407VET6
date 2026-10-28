@@ -1,4 +1,4 @@
 (fp_lib_table
-	(version 7)
-	(lib (name "Capacitor_THT") (type "KiCad") (uri "F:/RX/Schematic-PCB/Library/kicad-footprints-master/Capacitor_THT.pretty") (options "") (descr ""))
+  (version 7)
+  (lib (name "PLC")(type "KiCad")(uri "${KIPRJMOD}/PLC.pretty")(options "")(descr "Thu vien rieng cua project"))
 )

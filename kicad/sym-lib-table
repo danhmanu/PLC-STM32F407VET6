@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "PLC")(type "KiCad")(uri "${KIPRJMOD}/PLC.kicad_sym")(options "")(descr "Thu vien rieng cua project"))
+)
